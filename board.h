@@ -27,16 +27,19 @@ public slots:
 protected:
     void paintEvent(QPaintEvent *);
     void mouseMoveEvent(QMouseEvent *);
-    //void mousePressEvent(QMouseEvent *);
-    //void mouseReleaseEvent(QMouseEvent *);
+    void mousePressEvent(QMouseEvent *);
+    void mouseReleaseEvent(QMouseEvent *);
 
 private:
+    int currentPaintLevel;
     int userColor;
+    int userColorLocal;
     int CELLSIZE, GAPSIZE, TOTALSIZE, BARGIN, PIECEBARGIN, x0, y0;
-    CellState bdState[64], CAN_USER;
+    CellState bdState[64];
 
     QColor penColor, bkgColor, cellColorA, cellColorB, pieceColorW, pieceColorB;
 
+    void trySetPiece(int r, int c);
     void setPiece(int clr, int r, int c); // no check of validation
 
     QPoint mousePressPos;
@@ -45,6 +48,8 @@ private:
     QPoint getMouseCell(QPoint pos);
 
     oAlgo *algo;
+
+    inline CellState sameCan(int clr);
 };
 
 #endif // BOARD_H

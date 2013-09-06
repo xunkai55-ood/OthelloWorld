@@ -15,10 +15,9 @@ Board::Board(int userC, QWidget *parent) :
 {
     algo = new oAlgo(userC, this);
 
-    if (userC = BLACK)
-        CAN_USER = CAN_BLACK;
-    else
-        CAN_USER = CAN_WHITE;
+    userColor = userC;
+    userColorLocal = userC;
+
     setMinimumHeight(TOTALSIZE + BARGIN);
     setMinimumWidth(TOTALSIZE + BARGIN);
     setMouseTracking(true);
@@ -75,10 +74,10 @@ void Board::paintEvent(QPaintEvent *event)
 
     for (int k = 0; k < 64; k++)
     {
-        if (bdState[k] != IS_BLACK && bdState[k] != IS_WHITE) continue;
+        if ((bdState[k] & IS_PIECE) == 0) continue;
         int x = (k / 8) * (GAPSIZE + CELLSIZE), y = (k % 8) * (GAPSIZE + CELLSIZE);
 
-        if (bdState[k] == IS_BLACK)
+        if ((bdState[k] & IS_BLACK) != IS_BLACK)
             p.setBrush(pieceColorB);
         else
             p.setBrush(pieceColorW);
@@ -96,7 +95,7 @@ void Board::paintEvent(QPaintEvent *event)
         QPen penC(Qt::red);
         qDebug("%d", bdState[CELL(i, j)]);
         if ((bdState[CELL(i, j)] & IS_PIECE) == 0 &&
-            (bdState[CELL(i, j)] & CAN_USER) != 0)
+                (bdState[CELL(i, j)] & sameCan(userColorLocal)) != 0)
             penC.setColor(Qt::green);
         //else if (bdState[i * 8 + j] == IS_BLACK)
         //    penC.setColor(Qt::black);
@@ -118,6 +117,30 @@ void Board::mouseMoveEvent(QMouseEvent *event)
     //qDebug("%d %d", mouseCell.x(), mouseCell.y());
     if (mouseCell != mousePrevCell)
         update();
+}
+
+void Board::mousePressEvent(QMouseEvent *event)
+{
+    mousePressPos = event->pos();
+    mousePrevCell = mouseCell;
+    mouseCell = getMouseCell(event->pos());
+}
+
+void Board::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->pos() != mousePressPos)
+        return;
+    trySetPiece(mouseCell.x(), mouseCell.y());
+}
+
+void Board::trySetPiece(int r, int c)
+{
+    int x = CELL(r, c);
+    if ((bdState[x] & IS_PIECE) != 0) return;
+    if ((bdState[x] & sameCan(userColorLocal)) == 0) return;
+
+    setPiece(userColorLocal, r, c);
+    userColorLocal = BLACK + WHITE - userColorLocal;
 }
 
 void Board::setPiece(int clr, int r, int c)
@@ -145,4 +168,12 @@ QPoint Board::getMouseCell(QPoint pos)
     x = x / (GAPSIZE + CELLSIZE);
     y = y / (GAPSIZE + CELLSIZE);
     return QPoint(x, y);
+}
+
+CellState Board::sameCan(int clr)
+{
+    if (clr == BLACK)
+        return CAN_BLACK;
+    if (clr == WHITE)
+        return CAN_WHITE;
 }
