@@ -4,29 +4,48 @@
 #include <QPainter>
 #include <QDebug>
 #include <QImageReader>
+#include <QApplication>
+
+CellLabel::CellLabel(Board *bd, QWidget *parent) :
+    QLabel(parent)
+{
+    father = bd;
+    setMouseTracking(true);
+}
+
+void CellLabel::mouseMoveEvent(QMouseEvent *event)
+{
+    QApplication::sendEvent(father, event);
+}
+
+void CellLabel::mousePressEvent(QMouseEvent *event)
+{
+    QApplication::sendEvent(father, event);
+}
+
+void CellLabel::mouseReleaseEvent(QMouseEvent *event)
+{
+    QApplication::sendEvent(father, event);
+}
 
 Board::Board(int userC, QWidget *parent) :
     QWidget(parent),
     //CELLSIZE(60), GAPSIZE(5), TOTALSIZE(8 * CELLSIZE + 9 * GAPSIZE), BARGIN(30),
     //PIECEBARGIN(10),
-    CELLSIZE(55), GAPSIZE(1), x0(183), y0(144), PIECEOFFSET(4),
-    TOTALSIZE(8 * 55 + 9 * 1),
+    CELLSIZE(55), GAPSIZE(1), x0(183), y0(144), PIECEOFFSET(4), TOTALSIZE(8 * 55 + 9 * 1),
+    needHint(0), needPlay(0),
     //penColor(153, 51, 0), bkgColor(153, 128, 0),
     penColor(0, 0, 0), bkgColor(220, 220, 220),
     cellColorA(170, 170, 170), cellColorB(85, 85, 85),
     pieceColorB(Qt::black), pieceColorW(Qt::white),
     mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1)
 {
-    QImageReader reader;
-    reader.setFileName("://ui/baiqi.tga");
-    uiPieceW = reader.read();
-    reader.setFileName("://ui/heiqi.tga");
-    uiPieceB = reader.read();
-    reader.setFileName("://ui/window.jpg");
-    uiWindow = reader.read();
+    initResources();
+    initLabels();
 
-    algo = new oAlgo(userC, this);
+    algo = new OAlgo(userC, this);
 
+    qDebug() << userC;
     userColor = userC;
     userColorLocal = userC;
 
@@ -39,7 +58,7 @@ Board::Board(int userC, QWidget *parent) :
     algo->setPiece(WHITE, 3, 4);
     algo->setPiece(BLACK, 4, 4);
     algo->setPiece(WHITE, 4, 3);
-
+    paintPieces(0, 0);
 }
 
 Board::~Board()
@@ -47,27 +66,52 @@ Board::~Board()
     delete algo;
 }
 
+void Board::initResources()
+{
+    QImageReader reader;
+    reader.setFileName("://ui/baiqi.tga");
+    uiPieceW = reader.read();
+    reader.setFileName("://ui/heiqi.tga");
+    uiPieceB = reader.read();
+    reader.setFileName("://ui/window.jpg");
+    uiWindow = reader.read();
+}
+
+void Board::initLabels()
+{
+    for (int i = 0; i < 8; i++)
+        for (int j = 0; j < 8; j++)
+        {
+            //cellArray[CELL(i, j)] = new QLabel(this);
+            cellArray[CELL(i, j)] = new CellLabel(this, this);
+            cellArray[CELL(i, j)]->resize(CELLSIZE - 2 * PIECEOFFSET,
+                                          CELLSIZE - 2 * PIECEOFFSET);
+            cellArray[CELL(i, j)]->move(x0 + GAPSIZE + i * (GAPSIZE + CELLSIZE) + PIECEOFFSET,
+                                        y0 + GAPSIZE + j * (GAPSIZE + CELLSIZE) + PIECEOFFSET);
+            cellArray[CELL(i, j)]->setAlignment(Qt::AlignCenter);
+            cellArray[CELL(i, j)]->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        }
+}
+
+void Board::paintPieces(int hint = 0, int play = 0)
+{
+    //qDebug() << "hello";
+    for (int k = 0; k < 64; k++)
+        if (othello::sameClr(bdState[k], BLACK))
+            cellArray[k]->setPixmap(QPixmap::fromImage(uiPieceB));
+        else if (othello::sameClr(bdState[k], WHITE))
+            cellArray[k]->setPixmap(QPixmap::fromImage(uiPieceW));
+}
+
 void Board::paintEvent(QPaintEvent *)
 {
+    //qDebug() << "hi";
+    // only paint board & cursor
     QPainter p(this);
 
     p.drawImage(0, 0, uiWindow);
 
     int xx = x0 + GAPSIZE, yy = y0 + GAPSIZE;
-    for (int k = 0; k < 64; k++)
-    {
-        int x = (k / 8) * (GAPSIZE + CELLSIZE) + xx;
-        int y = (k % 8) * (GAPSIZE + CELLSIZE) + yy;
-        if (othello::sameClr(bdState[k], BLACK))
-        {
-            p.drawImage(x + PIECEOFFSET, y + PIECEOFFSET, uiPieceB);
-        }
-        else if (othello::sameClr(bdState[k], WHITE))
-        {
-            p.drawImage(x + PIECEOFFSET, y + PIECEOFFSET, uiPieceW);
-        }
-    }
-
     int i = mouseCell.x(), j = mouseCell.y();
     if (i >= 0 && j >= 0)
     {
@@ -86,10 +130,11 @@ void Board::paintEvent(QPaintEvent *)
 
 void Board::mouseMoveEvent(QMouseEvent *event)
 {
+    QPoint pos = mapFromGlobal(event->globalPos());
     if (!mouseEnable) return;
     //qDebug("cap!");
     mousePrevCell = mouseCell;
-    mouseCell = getMouseCell(event->pos());
+    mouseCell = getMouseCell(pos);
     //qDebug("%d %d", mouseCell.x(), mouseCell.y());
     if (mouseCell != mousePrevCell)
         update();
@@ -97,16 +142,18 @@ void Board::mouseMoveEvent(QMouseEvent *event)
 
 void Board::mousePressEvent(QMouseEvent *event)
 {
+    QPoint pos = mapFromGlobal(event->globalPos());
     if (!mouseEnable) return;
-    mousePressPos = event->pos();
+    mousePressPos = pos;
     mousePrevCell = mouseCell;
-    mouseCell = getMouseCell(event->pos());
+    mouseCell = getMouseCell(pos);
 }
 
 void Board::mouseReleaseEvent(QMouseEvent *event)
 {
+    QPoint pos = mapFromGlobal(event->globalPos());
     if (!mouseEnable) return;
-    if (event->pos() != mousePressPos)
+    if (pos != mousePressPos)
         return;
     trySetPiece(mouseCell.x(), mouseCell.y());
 }
@@ -115,7 +162,11 @@ void Board::trySetPiece(int r, int c)
 {
     int x = CELL(r, c);
     if ((bdState[x] & IS_PIECE) != 0) return;
-    if (!othello::canPut(bdState[x], userColorLocal)) return;
+    if (!othello::canPut(bdState[x], userColorLocal))
+    {
+        //hintPiece();
+        return;
+    }
 
     if (algo->setPiece(userColorLocal, r, c) != 0)
     {
@@ -127,12 +178,9 @@ void Board::trySetPiece(int r, int c)
         if (algo->refreshCan(userColorLocal) != 0)
             qDebug("still you");
         else
-        {
-            int isWin = algo->checkWin();
-            qDebug("win? %d", isWin);
-        }
+            gameEnd(algo->checkWin());
     }
-    update();
+    paintPieces();
 }
 
 QPoint Board::getMouseCell(QPoint pos)

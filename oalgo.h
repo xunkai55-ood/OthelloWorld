@@ -1,14 +1,14 @@
-#ifndef OALGO_H
-#define OALGO_H
+#ifndef OAlgo_H
+#define OAlgo_H
 
 #include "header.h"
 
 class Board;
 
-class oAlgo
+class OAlgo
 {
 public:
-    oAlgo(int userC, Board *bd);
+    OAlgo(int userC, Board *bd);
 
     int setPiece(int clr, int r, int c);
     int refreshCan(int clr);
@@ -24,4 +24,4 @@ private:
     int inBoard(int x);
 };
 
-#endif // OALGO_H
+#endif // OAlgo_H

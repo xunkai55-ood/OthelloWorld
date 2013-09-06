@@ -1,15 +1,15 @@
-#include "oalgo.h"
+#include "OAlgo.h"
 #include "board.h"
 #include "header.h"
 
-oAlgo::oAlgo(int userC, Board *bdFather) :
+OAlgo::OAlgo(int userC, Board *bdFather) :
     onBoard(0)
 {
     user = userC;
     bd = bdFather;
 }
 
-int oAlgo::setPiece(int clr, int r, int c)
+int OAlgo::setPiece(int clr, int r, int c)
 {
     onBoard++;
     int dir[8][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
@@ -61,7 +61,7 @@ int oAlgo::setPiece(int clr, int r, int c)
     return refreshCan(BLACK + WHITE - clr);
 }
 
-void oAlgo::clearCan()
+void OAlgo::clearCan()
 {
     for (int r = 0; r < 8; r++)
         for (int c = 0; c < 8; c++)
@@ -69,7 +69,7 @@ void oAlgo::clearCan()
                 bd->bdState[CELL(r, c)] = 0;
 }
 
-int oAlgo::refreshCan(int clr)
+int OAlgo::refreshCan(int clr)
 {
     int dir[8][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
@@ -111,7 +111,7 @@ int oAlgo::refreshCan(int clr)
     return rst;
 }
 
-int oAlgo::checkWin()
+int OAlgo::checkWin()
 {
     int s = 0;
     for (int i = 0; i < 64; i++)
@@ -122,7 +122,7 @@ int oAlgo::checkWin()
     return GAME_LOSE;
 }
 
-int oAlgo::inBoard(int x)
+int OAlgo::inBoard(int x)
 {
     return (x >= 0 && x < 8);
 }
