@@ -3,24 +3,35 @@
 
 #include <QPainter>
 #include <QDebug>
+#include <QImageReader>
 
 Board::Board(int userC, QWidget *parent) :
     QWidget(parent),
-    CELLSIZE(60), GAPSIZE(5), TOTALSIZE(8 * CELLSIZE + 9 * GAPSIZE), BARGIN(30),
-    PIECEBARGIN(10),
+    //CELLSIZE(60), GAPSIZE(5), TOTALSIZE(8 * CELLSIZE + 9 * GAPSIZE), BARGIN(30),
+    //PIECEBARGIN(10),
+    CELLSIZE(55), GAPSIZE(1), x0(183), y0(144), PIECEOFFSET(4),
+    TOTALSIZE(8 * 55 + 9 * 1),
     //penColor(153, 51, 0), bkgColor(153, 128, 0),
     penColor(0, 0, 0), bkgColor(220, 220, 220),
     cellColorA(170, 170, 170), cellColorB(85, 85, 85),
     pieceColorB(Qt::black), pieceColorW(Qt::white),
     mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1)
 {
+    QImageReader reader;
+    reader.setFileName("://ui/baiqi.tga");
+    uiPieceW = reader.read();
+    reader.setFileName("://ui/heiqi.tga");
+    uiPieceB = reader.read();
+    reader.setFileName("://ui/window.jpg");
+    uiWindow = reader.read();
+
     algo = new oAlgo(userC, this);
 
     userColor = userC;
     userColorLocal = userC;
 
-    setMinimumHeight(TOTALSIZE + BARGIN);
-    setMinimumWidth(TOTALSIZE + BARGIN);
+    setMinimumSize(uiWindow.size());
+    setMaximumSize(uiWindow.size());
     setMouseTracking(true);
 
     memset(bdState, 0, sizeof(CellState) * 64);
@@ -36,81 +47,42 @@ Board::~Board()
     delete algo;
 }
 
-
-void Board::paintEvent(QPaintEvent *event)
+void Board::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
 
-    // down X, right Y
-    int leftTopX = x0 = height() / 2 - TOTALSIZE / 2;
-    int leftTopY = y0 = width() / 2 - TOTALSIZE / 2;
+    p.drawImage(0, 0, uiWindow);
 
-    // paint bkg
-    p.setPen(Qt::NoPen);
-    p.setBrush(QBrush(bkgColor));
-    p.drawRect(leftTopX, leftTopY, TOTALSIZE, TOTALSIZE);
-
-    // paint cells
-    leftTopX += GAPSIZE, leftTopY += GAPSIZE;
-
-    p.setPen(QPen(penColor));
-    p.setBrush(QBrush(cellColorA));
-    for (int i = 0; i < 8; i++)
-        for (int j = 0; j < 8; j++)
-            if ((i + j) % 2 == 0)
-                p.drawRect(leftTopX + i * (GAPSIZE + CELLSIZE),
-                           leftTopY + j * (GAPSIZE + CELLSIZE),
-                           CELLSIZE, CELLSIZE);
-    p.setBrush(QBrush(cellColorB));
-    for (int i = 0; i < 8; i++)
-        for (int j = 0; j < 8; j++)
-            if ((i + j) % 2 == 1)
-                p.drawRect(leftTopX + i * (GAPSIZE + CELLSIZE),
-                           leftTopY + j * (GAPSIZE + CELLSIZE),
-                           CELLSIZE, CELLSIZE);
-
-    // paint pieces
-    QPen penS(Qt::black);
-    penS.setWidth(3);
-    p.setPen(penS);
-
+    int xx = x0 + GAPSIZE, yy = y0 + GAPSIZE;
     for (int k = 0; k < 64; k++)
     {
-        if ((bdState[k] & IS_PIECE) == 0) continue;
-        int x = (k / 8) * (GAPSIZE + CELLSIZE), y = (k % 8) * (GAPSIZE + CELLSIZE);
-
-        if ((bdState[k] & IS_BLACK) != IS_BLACK)
-            p.setBrush(pieceColorB);
-        else
-            p.setBrush(pieceColorW);
-        p.drawEllipse(x + PIECEBARGIN + leftTopX,
-                      y + PIECEBARGIN + leftTopY,
-                      CELLSIZE - PIECEBARGIN * 2,
-                      CELLSIZE - PIECEBARGIN * 2);
+        int x = (k / 8) * (GAPSIZE + CELLSIZE) + xx;
+        int y = (k % 8) * (GAPSIZE + CELLSIZE) + yy;
+        if (othello::sameClr(bdState[k], BLACK))
+        {
+            p.drawImage(x + PIECEOFFSET, y + PIECEOFFSET, uiPieceB);
+        }
+        else if (othello::sameClr(bdState[k], WHITE))
+        {
+            p.drawImage(x + PIECEOFFSET, y + PIECEOFFSET, uiPieceW);
+        }
     }
 
-    // paint cursor
     int i = mouseCell.x(), j = mouseCell.y();
     if (i >= 0 && j >= 0)
     {
         p.setBrush(Qt::NoBrush);
         QPen penC(Qt::red);
-        //qDebug("%d", bdState[CELL(i, j)]);
         if ((bdState[CELL(i, j)] & IS_PIECE) == 0 &&
                 othello::canPut(bdState[CELL(i, j)], userColorLocal))
             penC.setColor(Qt::green);
-        //else if (bdState[i * 8 + j] == IS_BLACK)
-        //    penC.setColor(Qt::black);
-        //else if (bdState[i * 8 + j] == IS_WHITE)
-        //    penC.setColor(Qt::white);
         penC.setWidth(3);
         p.setPen(penC);
-        p.drawRect(i * (GAPSIZE + CELLSIZE) + leftTopX,
-                   j * (GAPSIZE + CELLSIZE) + leftTopY,
+        p.drawRect(i * (GAPSIZE + CELLSIZE) + xx,
+                   j * (GAPSIZE + CELLSIZE) + yy,
                    CELLSIZE, CELLSIZE);
     }
 }
-
 
 void Board::mouseMoveEvent(QMouseEvent *event)
 {
@@ -166,6 +138,9 @@ void Board::trySetPiece(int r, int c)
 QPoint Board::getMouseCell(QPoint pos)
 {
     int x = pos.x(), y = pos.y();
+    //qDebug("%d %d", x, y);
+    //qDebug("gap %d cell %d total %d x0 %d y0 %d",
+    //       GAPSIZE, CELLSIZE, TOTALSIZE, x0, y0);
 
     if (x <= x0 + GAPSIZE || x >= x0 + TOTALSIZE ||
         y <= y0 + GAPSIZE || y >= y0 + TOTALSIZE)
@@ -176,6 +151,7 @@ QPoint Board::getMouseCell(QPoint pos)
         return QPoint(-1, -1);
     x = x / (GAPSIZE + CELLSIZE);
     y = y / (GAPSIZE + CELLSIZE);
+    //qDebug("cell : %d %d", x, y);
     return QPoint(x, y);
 }
 

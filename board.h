@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QImage>
 
 #include "header.h"
 #include "oalgo.h"
@@ -36,7 +37,8 @@ private:
     int currentPaintLevel;
     int userColor;
     int userColorLocal;
-    int CELLSIZE, GAPSIZE, TOTALSIZE, BARGIN, PIECEBARGIN, x0, y0;
+    int TOTALSIZE, BARGIN, PIECEBARGIN;
+    int CELLSIZE, GAPSIZE, PIECEOFFSET, x0, y0;
     CellState bdState[64];
 
     QColor penColor, bkgColor, cellColorA, cellColorB, pieceColorW, pieceColorB;
@@ -51,6 +53,7 @@ private:
     QPoint getMouseCell(QPoint pos);
 
     oAlgo *algo;
+    QImage uiWindow, uiPieceB, uiPieceW;
 };
 
 #endif // BOARD_H

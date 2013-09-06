@@ -33,3 +33,6 @@ FORMS    += mainwindow.ui \
     modedialog.ui \
     ipclient.ui \
     ipserver.ui
+
+RESOURCES += \
+    ui.qrc
