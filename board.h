@@ -42,6 +42,8 @@ private:
     void trySetPiece(int r, int c);
     void setPiece(int clr, int r, int c); // no check of validation
 
+    void gameEnd(int msg);
+
     QPoint mousePressPos;
     QPoint mousePrevCell, mouseCell;
 

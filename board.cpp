@@ -93,7 +93,7 @@ void Board::paintEvent(QPaintEvent *event)
     {
         p.setBrush(Qt::NoBrush);
         QPen penC(Qt::red);
-        qDebug("%d", bdState[CELL(i, j)]);
+        //qDebug("%d", bdState[CELL(i, j)]);
         if ((bdState[CELL(i, j)] & IS_PIECE) == 0 &&
                 (bdState[CELL(i, j)] & sameCan(userColorLocal)) != 0)
             penC.setColor(Qt::green);
@@ -140,6 +140,8 @@ void Board::trySetPiece(int r, int c)
     if ((bdState[x] & sameCan(userColorLocal)) == 0) return;
 
     setPiece(userColorLocal, r, c);
+    if (algo->checkWin() != 0)
+        gameEnd(algo->checkWin());
     userColorLocal = BLACK + WHITE - userColorLocal;
 }
 
@@ -170,7 +172,14 @@ QPoint Board::getMouseCell(QPoint pos)
     return QPoint(x, y);
 }
 
-CellState Board::sameCan(int clr)
+void Board::gameEnd(int msg)
+{
+    qDebug("game end %d", msg);
+
+    //emit gameEnded(msg);
+}
+
+inline CellState Board::sameCan(int clr)
 {
     if (clr == BLACK)
         return CAN_BLACK;

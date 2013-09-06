@@ -1,7 +1,8 @@
 #include "oalgo.h"
 #include "board.h"
 
-oAlgo::oAlgo(int userC, Board *bdFather)
+oAlgo::oAlgo(int userC, Board *bdFather) :
+    onBoard(0)
 {
     user = userC;
     bd = bdFather;
@@ -9,6 +10,7 @@ oAlgo::oAlgo(int userC, Board *bdFather)
 
 int oAlgo::setPiece(int clr, int r, int c)
 {
+    onBoard++;
     int dir[8][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     /* clear shrink level */
@@ -50,9 +52,9 @@ int oAlgo::setPiece(int clr, int r, int c)
                 }
                 if (!ok || k == 1) continue;
                 //qDebug("dir %d count %d", d, k);
-                qDebug("prepare %d %d", i0, j0);
+                //qDebug("prepare %d %d", i0, j0);
                 i = i0 + dir[d][0], j = j0 + dir[d][1];
-                qDebug("%d %d", i, j);
+                //qDebug("%d %d", i, j);
                 for (int kk = 0; kk < k - 1;
                      kk++);
                 {
@@ -73,8 +75,10 @@ int oAlgo::setPiece(int clr, int r, int c)
         tl = newTl;
     }
     clearCan();
-    refreshCan(BLACK);
-    refreshCan(WHITE);
+    if (refreshCan(BLACK + WHITE - user) == 0)
+        setWin(1);
+    if (refreshCan(user) == 0)
+        setWin(-1);
     return level;
 }
 
@@ -86,11 +90,12 @@ void oAlgo::clearCan()
                 bd->bdState[CELL(r, c)] = 0;
 }
 
-void oAlgo::refreshCan(int clr)
+int oAlgo::refreshCan(int clr)
 {
     int dir[8][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
     /* clear */
+    int rst = 0;
     for (int r = 0; r < 8; r++)
         for (int c = 0; c < 8; c++)
         {
@@ -118,9 +123,32 @@ void oAlgo::refreshCan(int clr)
                     flag = 1;
                 }
                 if (flag)
+                {
                     bd->bdState[CELL(r, c)] |= sameCan(clr);
+                    rst++;
+                }
             }
         }
+    return rst;
+}
+
+void oAlgo::setWin(int x)
+{
+    win = x;
+}
+
+int oAlgo::checkWin()
+{
+    if (win == 1) return GAME_WIN;
+    if (win == -1) return GAME_LOSE;
+    if (onBoard < 64) return 0;
+    int s = 0;
+    for (int i = 0; i < 64; i++)
+        if ((bd->bdState[i] & same(user)) == same(user))
+            s++;
+    if (s > 32) return GAME_WIN;
+    if (s < 32) return GAME_LOSE;
+    return GAME_TIE;
 }
 
 int oAlgo::inBoard(int x)

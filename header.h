@@ -26,5 +26,8 @@ typedef int CellState;
 #define IS_SHRINK (0x8f)
 #define GET_SHRINK (0x1f)
 
+#define GAME_WIN (3)
+#define GAME_LOSE (1)
+#define GAME_TIE (2)
 
 #endif // HEADER_H

@@ -11,12 +11,17 @@ public:
     oAlgo(int userC, Board *bd);
 
     int setPiece(int clr, int r, int c);
-    void refreshCan(int clr);
+    int refreshCan(int clr);
     void clearCan();
+
+    void setWin(int x);
+    int checkWin();
 
 private:
     int user;
     Board *bd;
+    int win;
+    int onBoard;
 
     int inBoard(int x);
     inline CellState anti(int clr);
