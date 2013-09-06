@@ -12,7 +12,7 @@ Board::Board(int userC, QWidget *parent) :
     penColor(0, 0, 0), bkgColor(220, 220, 220),
     cellColorA(170, 170, 170), cellColorB(85, 85, 85),
     pieceColorB(Qt::black), pieceColorW(Qt::white),
-    mousePrevCell(-1, -1), mouseCell(-1, -1), deadStatus(0)
+    mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1)
 {
     algo = new oAlgo(userC, this);
 
@@ -35,6 +35,7 @@ Board::~Board()
 {
     delete algo;
 }
+
 
 void Board::paintEvent(QPaintEvent *event)
 {
@@ -110,8 +111,10 @@ void Board::paintEvent(QPaintEvent *event)
     }
 }
 
+
 void Board::mouseMoveEvent(QMouseEvent *event)
 {
+    if (!mouseEnable) return;
     //qDebug("cap!");
     mousePrevCell = mouseCell;
     mouseCell = getMouseCell(event->pos());
@@ -122,6 +125,7 @@ void Board::mouseMoveEvent(QMouseEvent *event)
 
 void Board::mousePressEvent(QMouseEvent *event)
 {
+    if (!mouseEnable) return;
     mousePressPos = event->pos();
     mousePrevCell = mouseCell;
     mouseCell = getMouseCell(event->pos());
@@ -129,6 +133,7 @@ void Board::mousePressEvent(QMouseEvent *event)
 
 void Board::mouseReleaseEvent(QMouseEvent *event)
 {
+    if (!mouseEnable) return;
     if (event->pos() != mousePressPos)
         return;
     trySetPiece(mouseCell.x(), mouseCell.y());
@@ -142,17 +147,20 @@ void Board::trySetPiece(int r, int c)
 
     if (algo->setPiece(userColorLocal, r, c) != 0)
     {
-        deadStatus = 0;
+        noPlace = 0;
         userColorLocal = BLACK + WHITE - userColorLocal;
     }
     else
     {
-        deadStatus += 1;
-        if (deadStatus == 1)
-            qDebug() << "still you";
+        if (algo->refreshCan(userColorLocal) != 0)
+            qDebug("still you");
         else
-            qDebug("win : %d", algo->checkWin());
+        {
+            int isWin = algo->checkWin();
+            qDebug("win? %d", isWin);
+        }
     }
+    update();
 }
 
 QPoint Board::getMouseCell(QPoint pos)

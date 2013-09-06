@@ -22,7 +22,7 @@ int oAlgo::setPiece(int clr, int r, int c)
     /* calc */
     bd->bdState[CELL(r, c)] = (IS_PIECE | othello::toState(clr) | SET_SHRINK);
 
-    qDebug("treat %d %d", r, c);
+    //qDebug("treat %d %d", r, c);
     for (int d = 0; d < 8; d++)
     {
         int ok = 0, i, j, k;
@@ -47,7 +47,7 @@ int oAlgo::setPiece(int clr, int r, int c)
         i = r + dir[d][0], j = c + dir[d][1];
         for (int kk = 0; kk < k - 1; kk++)
         {
-            qDebug("paint %d %d", i, j);
+            //qDebug("paint %d %d", i, j);
             bd->bdState[CELL(i, j)] = (IS_PIECE | othello::toState(clr) | SET_SHRINK);
             i += dir[d][0], j += dir[d][1];
         }
@@ -57,8 +57,8 @@ int oAlgo::setPiece(int clr, int r, int c)
     //refreshCan(BLACK + WHITE - user);
     //return refreshCan(user);
 
-    refreshCan(BLACK + WHITE - clr);
-    return refreshCan(clr);
+    refreshCan(clr);
+    return refreshCan(BLACK + WHITE - clr);
 }
 
 void oAlgo::clearCan()

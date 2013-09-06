@@ -31,7 +31,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *);
 
 private:
-    int deadStatus;
+    int mouseEnable;
+    int noPlace;
     int currentPaintLevel;
     int userColor;
     int userColorLocal;
