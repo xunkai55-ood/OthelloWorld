@@ -31,6 +31,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *);
 
 private:
+    int deadStatus;
     int currentPaintLevel;
     int userColor;
     int userColorLocal;
@@ -40,7 +41,6 @@ private:
     QColor penColor, bkgColor, cellColorA, cellColorB, pieceColorW, pieceColorB;
 
     void trySetPiece(int r, int c);
-    void setPiece(int clr, int r, int c); // no check of validation
 
     void gameEnd(int msg);
 
@@ -50,8 +50,6 @@ private:
     QPoint getMouseCell(QPoint pos);
 
     oAlgo *algo;
-
-    inline CellState sameCan(int clr);
 };
 
 #endif // BOARD_H

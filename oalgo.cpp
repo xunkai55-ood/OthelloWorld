@@ -1,5 +1,6 @@
 #include "oalgo.h"
 #include "board.h"
+#include "header.h"
 
 oAlgo::oAlgo(int userC, Board *bdFather) :
     onBoard(0)
@@ -16,70 +17,48 @@ int oAlgo::setPiece(int clr, int r, int c)
     /* clear shrink level */
 
     for (int x = 0; x < 64; x++)
-        bd->bdState[x] &= ~GET_SHRINK;
+        bd->bdState[x] &= ~SET_SHRINK;
 
     /* calc */
+    bd->bdState[CELL(r, c)] = (IS_PIECE | othello::toState(clr) | SET_SHRINK);
 
-    int level = 0;
-    int q[65][2];
-    int hd = 0, tl = 1;
-    q[hd][0] = r, q[hd][1] = c;
-
-    while (++level)
+    qDebug("treat %d %d", r, c);
+    for (int d = 0; d < 8; d++)
     {
-        int newTl = tl;
-        while (hd < tl)
+        int ok = 0, i, j, k;
+        for (k = 1, i = r + dir[d][0], j = c + dir[d][1];
+             inBoard(i) && inBoard(j); k++)
         {
-            int i0 = q[hd][0], j0 = q[hd][1];
-            //qDebug("handle : %d : %d %d", level, i0, j0);
-            hd++;
-            for (int d = 0; d < 8; d++)
+            if (othello::sameClr(bd->bdState[CELL(i, j)], clr))
             {
-                int ok = 0, i, j, k;
-                for (k = 1, i = i0 + dir[d][0], j = j0 + dir[d][1];
-                     inBoard(i) && inBoard(j); k++)
-                {
-                    if ((bd->bdState[CELL(i, j)] & same(clr)) == same(clr))
-                    {
-                        ok = 1;
-                        break;
-                    }
-                    else if (!((bd->bdState[CELL(i, j)] & anti(clr)) == anti(clr)))
-                    {
-                        break;
-                    }
-                    i += dir[d][0], j += dir[d][1];
-                }
-                if (!ok || k == 1) continue;
-                //qDebug("dir %d count %d", d, k);
-                //qDebug("prepare %d %d", i0, j0);
-                i = i0 + dir[d][0], j = j0 + dir[d][1];
-                //qDebug("%d %d", i, j);
-                for (int kk = 0; kk < k - 1;
-                     kk++);
-                {
-                    bd->bdState[CELL(i, j)] = (IS_PIECE | same(clr) | level);
-                    qDebug("in queue %d %d", i, j);
-                    q[newTl][0] = i;
-                    q[newTl][1] = j;
-                    newTl++;
-                    i += dir[d][0], j += dir[d][1];
-                }
+                //qDebug("find a same %d %d %d", i, j, bd->bdState[CELL(i, j)]);
+                ok = 1;
+                break;
             }
+            else if (!othello::antiClr(bd->bdState[CELL(i, j)], clr))
+            {
+                //qDebug("not anti %d %d %d", i, j, bd->bdState[CELL(i, j)]);
+                break;
+            }
+            //qDebug("valid %d %d %d", i, j, bd->bdState[CELL(i, j)]);
+            i += dir[d][0], j += dir[d][1];
         }
-        if (tl == newTl)
+        if (!ok || k == 1) continue;
+        i = r + dir[d][0], j = c + dir[d][1];
+        for (int kk = 0; kk < k - 1; kk++)
         {
-            level--;
-            break;
+            qDebug("paint %d %d", i, j);
+            bd->bdState[CELL(i, j)] = (IS_PIECE | othello::toState(clr) | SET_SHRINK);
+            i += dir[d][0], j += dir[d][1];
         }
-        tl = newTl;
     }
+
     clearCan();
-    if (refreshCan(BLACK + WHITE - user) == 0)
-        setWin(1);
-    if (refreshCan(user) == 0)
-        setWin(-1);
-    return level;
+    //refreshCan(BLACK + WHITE - user);
+    //return refreshCan(user);
+
+    refreshCan(BLACK + WHITE - clr);
+    return refreshCan(clr);
 }
 
 void oAlgo::clearCan()
@@ -108,12 +87,12 @@ int oAlgo::refreshCan(int clr)
                     for (k = 1, i = r + dir[d][0], j = c + dir[d][1];
                          inBoard(i) && inBoard(j); k++)
                     {
-                        if ((bd->bdState[CELL(i, j)] & same(clr)) == same(clr))
+                        if (othello::sameClr(bd->bdState[CELL(i, j)], clr))
                         {
                             ok = 1;
                             break;
                         }
-                        else if (!((bd->bdState[CELL(i, j)] & anti(clr)) == anti(clr)))
+                        else if (!othello::antiClr(bd->bdState[CELL(i, j)], clr))
                         {
                             break;
                         }
@@ -124,7 +103,7 @@ int oAlgo::refreshCan(int clr)
                 }
                 if (flag)
                 {
-                    bd->bdState[CELL(r, c)] |= sameCan(clr);
+                    bd->bdState[CELL(r, c)] |= othello::canState(clr);
                     rst++;
                 }
             }
@@ -132,23 +111,15 @@ int oAlgo::refreshCan(int clr)
     return rst;
 }
 
-void oAlgo::setWin(int x)
-{
-    win = x;
-}
-
 int oAlgo::checkWin()
 {
-    if (win == 1) return GAME_WIN;
-    if (win == -1) return GAME_LOSE;
-    if (onBoard < 64) return 0;
     int s = 0;
     for (int i = 0; i < 64; i++)
-        if ((bd->bdState[i] & same(user)) == same(user))
+        if (othello::sameClr(bd->bdState[i], user))
             s++;
-    if (s > 32) return GAME_WIN;
-    if (s < 32) return GAME_LOSE;
-    return GAME_TIE;
+    if (s * 2 > onBoard) return GAME_WIN;
+    if (s * 2 == onBoard) return GAME_TIE;
+    return GAME_LOSE;
 }
 
 int oAlgo::inBoard(int x)
@@ -156,26 +127,4 @@ int oAlgo::inBoard(int x)
     return (x >= 0 && x < 8);
 }
 
-inline CellState oAlgo::anti(int clr)
-{
-    if (clr == BLACK)
-        return IS_WHITE;
-    if (clr == WHITE)
-        return IS_BLACK;
-}
 
-inline CellState oAlgo::same(int clr)
-{
-    if (clr == BLACK)
-        return IS_BLACK;
-    if (clr == WHITE)
-        return IS_WHITE;
-}
-
-inline CellState oAlgo::sameCan(int clr)
-{
-    if (clr == BLACK)
-        return CAN_BLACK;
-    if (clr == WHITE)
-        return CAN_WHITE;
-}

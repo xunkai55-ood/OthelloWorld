@@ -24,7 +24,17 @@ typedef int CellState;
 #define CAN_BLACK (0x40)
 #define CAN_WHITE (0x20)
 #define IS_SHRINK (0x8f)
-#define GET_SHRINK (0x1f)
+#define SET_SHRINK (0x0f)
+
+namespace othello{
+
+int sameClr(CellState cell, int clr);
+int antiClr(CellState cell, int clr);
+CellState canState(int clr);
+int canPut(CellState cell, int clr);
+CellState toState(int clr);
+
+}
 
 #define GAME_WIN (3)
 #define GAME_LOSE (1)

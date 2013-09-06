@@ -2,6 +2,7 @@
 #include "oalgo.h"
 
 #include <QPainter>
+#include <QDebug>
 
 Board::Board(int userC, QWidget *parent) :
     QWidget(parent),
@@ -11,7 +12,7 @@ Board::Board(int userC, QWidget *parent) :
     penColor(0, 0, 0), bkgColor(220, 220, 220),
     cellColorA(170, 170, 170), cellColorB(85, 85, 85),
     pieceColorB(Qt::black), pieceColorW(Qt::white),
-    mousePrevCell(-1, -1), mouseCell(-1, -1)
+    mousePrevCell(-1, -1), mouseCell(-1, -1), deadStatus(0)
 {
     algo = new oAlgo(userC, this);
 
@@ -23,10 +24,10 @@ Board::Board(int userC, QWidget *parent) :
     setMouseTracking(true);
 
     memset(bdState, 0, sizeof(CellState) * 64);
-    setPiece(BLACK, 3, 3);
-    setPiece(WHITE, 3, 4);
-    setPiece(BLACK, 4, 4);
-    setPiece(WHITE, 4, 3);
+    algo->setPiece(BLACK, 3, 3);
+    algo->setPiece(WHITE, 3, 4);
+    algo->setPiece(BLACK, 4, 4);
+    algo->setPiece(WHITE, 4, 3);
 
 }
 
@@ -95,7 +96,7 @@ void Board::paintEvent(QPaintEvent *event)
         QPen penC(Qt::red);
         //qDebug("%d", bdState[CELL(i, j)]);
         if ((bdState[CELL(i, j)] & IS_PIECE) == 0 &&
-                (bdState[CELL(i, j)] & sameCan(userColorLocal)) != 0)
+                othello::canPut(bdState[CELL(i, j)], userColorLocal))
             penC.setColor(Qt::green);
         //else if (bdState[i * 8 + j] == IS_BLACK)
         //    penC.setColor(Qt::black);
@@ -137,23 +138,21 @@ void Board::trySetPiece(int r, int c)
 {
     int x = CELL(r, c);
     if ((bdState[x] & IS_PIECE) != 0) return;
-    if ((bdState[x] & sameCan(userColorLocal)) == 0) return;
+    if (!othello::canPut(bdState[x], userColorLocal)) return;
 
-    setPiece(userColorLocal, r, c);
-    if (algo->checkWin() != 0)
-        gameEnd(algo->checkWin());
-    userColorLocal = BLACK + WHITE - userColorLocal;
-}
-
-void Board::setPiece(int clr, int r, int c)
-{
-    if (clr == BLACK)
-        bdState[CELL(r, c)] = IS_BLACK;
+    if (algo->setPiece(userColorLocal, r, c) != 0)
+    {
+        deadStatus = 0;
+        userColorLocal = BLACK + WHITE - userColorLocal;
+    }
     else
-        bdState[CELL(r, c)] = IS_WHITE;
-    algo->setPiece(clr, r, c);
-    //refreshState();
-    //emit decide(r, c);
+    {
+        deadStatus += 1;
+        if (deadStatus == 1)
+            qDebug() << "still you";
+        else
+            qDebug("win : %d", algo->checkWin());
+    }
 }
 
 QPoint Board::getMouseCell(QPoint pos)
@@ -177,12 +176,4 @@ void Board::gameEnd(int msg)
     qDebug("game end %d", msg);
 
     //emit gameEnded(msg);
-}
-
-inline CellState Board::sameCan(int clr)
-{
-    if (clr == BLACK)
-        return CAN_BLACK;
-    if (clr == WHITE)
-        return CAN_WHITE;
 }

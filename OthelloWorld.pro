@@ -15,6 +15,7 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     modedialog.cpp \
+    header.cpp \
     ipclient.cpp \
     ipserver.cpp \
     board.cpp \
