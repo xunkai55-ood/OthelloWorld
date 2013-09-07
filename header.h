@@ -40,4 +40,7 @@ CellState toState(int clr);
 #define GAME_LOSE (1)
 #define GAME_TIE (2)
 
+#define GAME_INFO (-5)
+#define GAME_RUNAWAY (-10)
+
 #endif // HEADER_H

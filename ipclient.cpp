@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <QPushButton>
+#include <QDebug>
 
 IpClient::IpClient(QWidget *parent) :
     QDialog(parent),
@@ -14,6 +15,8 @@ IpClient::IpClient(QWidget *parent) :
                    Qt::WindowCloseButtonHint |
                    Qt::WindowMaximizeButtonHint |
                    Qt::WindowMinimizeButtonHint));
+
+    ui->lineEdit->setText("127.0.0.1");
 
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(checkIp()));
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(cancel()));
@@ -82,29 +85,40 @@ void IpClient::cancel()
 void IpClient::checkIp()
 {
     QString now = ui->lineEdit->text();
-    ui->lineEdit->setText("");
-    ui->label->setText("Invalid IP address. Try again");
 
     for (int i = 0; i < now.length(); i++)
     {
         if (now[i] != '.' && !(now[i] >= '0' && now[i] <= '9'))
+        {
+            ui->lineEdit->setText("");
+            ui->label->setText("Invalid IP address. Try again");
             return;
+        }
     }
     QStringList subs = now.split(".");
     if (subs.size() != 4)
+    {
+        ui->lineEdit->setText("");
+        ui->label->setText("Invalid IP address. Try again");
         return;
+    }
     for (int i = 0; i < subs.size(); i++)
     {
         QString sub = subs[i];
         bool flag;
         int t = sub.toInt(&flag);
         if (!flag || !(t >= 0 && t < 256))
+        {
+            ui->lineEdit->setText("");
+            ui->label->setText("Invalid IP address. Try again");
             return;
+        }
     }
     done(1);
 }
 
 QString IpClient::getIp() const
 {
+    qDebug() << ui->lineEdit->text();
     return ui->lineEdit->text();
 }

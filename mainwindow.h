@@ -5,6 +5,7 @@
 #include <QString>
 
 #include "header.h"
+#include "patrol.h"
 #include "board.h"
 
 namespace Ui {
@@ -25,9 +26,12 @@ public:
 private:
     Ui::MainWindow *ui;
     Board *bd;
+    Patrol *patrol;
     int mode;
     int userColor;
     QString serverIp;
+
+    char ip[100];
 
     void initMode();
 };

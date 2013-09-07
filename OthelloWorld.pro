@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = OthelloWorld
 TEMPLATE = app
 
+LIBS += -lwsock32
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -20,7 +21,8 @@ SOURCES += main.cpp\
     ipserver.cpp \
     board.cpp \
     oalgo.cpp \
-    choosecolor.cpp
+    choosecolor.cpp \
+    patrol.cpp
 
 HEADERS  += mainwindow.h \
     modedialog.h \
@@ -29,7 +31,8 @@ HEADERS  += mainwindow.h \
     ipserver.h \
     board.h \
     oalgo.h \
-    choosecolor.h
+    choosecolor.h \
+    patrol.h
 
 FORMS    += mainwindow.ui \
     modedialog.ui \

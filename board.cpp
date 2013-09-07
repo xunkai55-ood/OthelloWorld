@@ -96,6 +96,13 @@ void Board::gameStart()
     update();
 }
 
+void Board::gameEnd(int msg)
+{
+    qDebug("game end %d", msg);
+    startButton->setEnabled(true);
+    //emit gameEnded(msg);
+}
+
 void Board::playerReady()
 {
     meReady = 1;
@@ -318,11 +325,4 @@ QPoint Board::getMouseCell(QPoint pos)
     y = y / (GAPSIZE + CELLSIZE);
     //qDebug("cell : %d %d", x, y);
     return QPoint(x, y);
-}
-
-void Board::gameEnd(int msg)
-{
-    qDebug("game end %d", msg);
-    startButton->setEnabled(true);
-    //emit gameEnded(msg);
 }
