@@ -93,11 +93,14 @@ void Board::initInfo()
     scoreLabelA->setFont(font);
     scoreLabelB->setFont(font);
 
-    QIcon ico("://ui/start.png");
+    QPixmap icoPm("://ui/start.png");
+    qDebug() << icoPm.size();
+    QIcon ico(icoPm);
     startButton = new QPushButton(ico, "", this);
-    //button.setIcon(ico);
-    startButton->move(356, 660);
-
+    startButton->setFlat(true);
+    startButton->setGeometry(356, 660, 94, 36);
+    startButton->setIcon(ico);
+    startButton->setIconSize(icoPm.size());
 }
 
 void Board::initResources()
