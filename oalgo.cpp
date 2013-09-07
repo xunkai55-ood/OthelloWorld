@@ -2,11 +2,21 @@
 #include "board.h"
 #include "header.h"
 
-OAlgo::OAlgo(int userC, Board *bdFather) :
-    onBoard(0)
+OAlgo::OAlgo(Board *bdFather) :
+    onBoard(0), user(-1)
 {
-    user = userC;
     bd = bdFather;
+}
+
+void OAlgo::reStart()
+{
+    user = -1;
+    onBoard = 0;
+}
+
+void OAlgo::setUserC(int clr)
+{
+    user = clr;
 }
 
 int OAlgo::setPiece(int clr, int r, int c)

@@ -9,6 +9,11 @@ IpClient::IpClient(QWidget *parent) :
     ui(new Ui::IpClient)
 {
     ui->setupUi(this);
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+    setWindowFlags(windowFlags() &~ (
+                   Qt::WindowCloseButtonHint |
+                   Qt::WindowMaximizeButtonHint |
+                   Qt::WindowMinimizeButtonHint));
 
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(checkIp()));
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(cancel()));

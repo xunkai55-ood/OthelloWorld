@@ -14,11 +14,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     initMode();
     if (mode == MODE_CLIENT)
-        userColor = WHITE;
+        bd = new Board(0, this);
     else
-        userColor = BLACK;
+        bd = new Board(1, this);
 
-    bd = new Board(userColor, this);
     setCentralWidget(bd);
 }
 

@@ -1,5 +1,6 @@
 #include "board.h"
 #include "oalgo.h"
+#include "choosecolor.h"
 
 #include <QPainter>
 #include <QDebug>
@@ -29,41 +30,79 @@ void CellLabel::mouseReleaseEvent(QMouseEvent *event)
     QApplication::sendEvent(father, event);
 }
 
-Board::Board(int userC, QWidget *parent) :
+Board::Board(int server, QWidget *parent) :
     QWidget(parent),
-    //CELLSIZE(60), GAPSIZE(5), TOTALSIZE(8 * CELLSIZE + 9 * GAPSIZE), BARGIN(30),
-    //PIECEBARGIN(10),
     CELLSIZE(55), GAPSIZE(1), x0(183), y0(144), PIECEOFFSET(4), TOTALSIZE(8 * 55 + 9 * 1),
+    isServer(server), userColor(-1), currentColor(BLACK),
     needHint(0), needPlay(0),
-    //penColor(153, 51, 0), bkgColor(153, 128, 0),
     penColor(0, 0, 0), bkgColor(220, 220, 220),
     cellColorA(170, 170, 170), cellColorB(85, 85, 85),
     pieceColorB(Qt::black), pieceColorW(Qt::white),
     mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1),
-    scoreAX0(103), scoreAY0(482), scoreBX0(753), scoreBY0(482), scoreH(15), scoreW(50)
+    scoreAX0(103), scoreAY0(482), scoreBX0(753), scoreBY0(482), scoreH(15), scoreW(50),
+    infoAX0(92), infoAY0(305), infoBX0(739), infoBY0(305),
+    meReady(0), heReady(0)
 {
     initResources();
     initLabels();
     initInfo();
 
-    algo = new OAlgo(userC, this);
-
-    qDebug() << userC;
-    userColor = userC;
-    userColorLocal = userC;
+    algo = new OAlgo(this);
 
     setMinimumSize(uiWindow.size());
     setMaximumSize(uiWindow.size());
     setMouseTracking(true);
 
+    connect(startButton, SIGNAL(clicked()), this, SLOT(playerReady()));
+
     memset(bdState, 0, sizeof(CellState) * 64);
+
+    paintPieces(0, 0);
+    paintScore();
+    update();
+}
+
+void Board::gamePrepare()
+{
+    if (isServer)
+    {
+        ChooseColor dlg(this);
+        userColor = dlg.exec();
+        qDebug("%d", userColor);
+        gameStart();
+    }
+}
+
+void Board::gameStart()
+{
+    memset(bdState, 0, sizeof(CellState) * 64);
+    paintPieces(0, 0);
+    paintScore();
+    update();
+
+    qDebug() << "start...";
+    algo->reStart();
+    algo->setUserC(userColor);
+    currentColor = BLACK;
+
     algo->setPiece(BLACK, 3, 3);
     algo->setPiece(WHITE, 3, 4);
     algo->setPiece(BLACK, 4, 4);
     algo->setPiece(WHITE, 4, 3);
 
+    qDebug() << "set...";
     paintPieces(0, 0);
     paintScore();
+    update();
+}
+
+void Board::playerReady()
+{
+    meReady = 1;
+    heReady = 1;
+    if (heReady)
+        gamePrepare();
+    startButton->setEnabled(false);
 }
 
 Board::~Board()
@@ -94,13 +133,17 @@ void Board::initInfo()
     scoreLabelB->setFont(font);
 
     QPixmap icoPm("://ui/start.png");
-    qDebug() << icoPm.size();
     QIcon ico(icoPm);
     startButton = new QPushButton(ico, "", this);
     startButton->setFlat(true);
     startButton->setGeometry(356, 660, 94, 36);
     startButton->setIcon(ico);
     startButton->setIconSize(icoPm.size());
+
+    pieceInfoA = new QLabel(this);
+    pieceInfoB = new QLabel(this);
+    pieceInfoA->setGeometry(infoAX0, infoAY0, 46, 46);
+    pieceInfoB->setGeometry(infoBX0, infoBY0, 46, 46);
 }
 
 void Board::initResources()
@@ -153,6 +196,28 @@ void Board::paintPieces(int hint = 0, int play = 0)
             cellArray[k]->setPixmap(QPixmap::fromImage(uiPieceB));
         else if (othello::sameClr(bdState[k], WHITE))
             cellArray[k]->setPixmap(QPixmap::fromImage(uiPieceW));
+        else
+            cellArray[k]->clear();
+}
+
+void Board::paintCurrentColor()
+{
+    if (userColor == currentColor)
+    {
+        if (userColor == BLACK)
+            pieceInfoB->setPixmap(QPixmap::fromImage(uiPieceB));
+        else
+            pieceInfoB->setPixmap(QPixmap::fromImage(uiPieceW));
+        pieceInfoA->clear();
+    }
+    else
+    {
+        if (userColor == BLACK)
+            pieceInfoA->setPixmap(QPixmap::fromImage(uiPieceW));
+        else
+            pieceInfoA->setPixmap(QPixmap::fromImage(uiPieceB));
+        pieceInfoB->clear();
+    }
 }
 
 void Board::paintEvent(QPaintEvent *)
@@ -170,7 +235,7 @@ void Board::paintEvent(QPaintEvent *)
         p.setBrush(Qt::NoBrush);
         QPen penC(Qt::red);
         if ((bdState[CELL(i, j)] & IS_PIECE) == 0 &&
-                othello::canPut(bdState[CELL(i, j)], userColorLocal))
+                othello::canPut(bdState[CELL(i, j)], currentColor))
             penC.setColor(Qt::green);
         penC.setWidth(3);
         p.setPen(penC);
@@ -194,8 +259,8 @@ void Board::mouseMoveEvent(QMouseEvent *event)
 
 void Board::mousePressEvent(QMouseEvent *event)
 {
+    //if (userColor != currentColor) return;
     QPoint pos = mapFromGlobal(event->globalPos());
-    if (!mouseEnable) return;
     mousePressPos = pos;
     mousePrevCell = mouseCell;
     mouseCell = getMouseCell(pos);
@@ -203,8 +268,8 @@ void Board::mousePressEvent(QMouseEvent *event)
 
 void Board::mouseReleaseEvent(QMouseEvent *event)
 {
+    //if (userColor != currentColor) return;
     QPoint pos = mapFromGlobal(event->globalPos());
-    if (!mouseEnable) return;
     if (pos != mousePressPos)
         return;
     trySetPiece(mouseCell.x(), mouseCell.y());
@@ -214,24 +279,23 @@ void Board::trySetPiece(int r, int c)
 {
     int x = CELL(r, c);
     if ((bdState[x] & IS_PIECE) != 0) return;
-    if (!othello::canPut(bdState[x], userColorLocal))
+    if (!othello::canPut(bdState[x], currentColor))
     {
         //hintPiece();
         return;
     }
 
-    if (algo->setPiece(userColorLocal, r, c) != 0)
+    if (algo->setPiece(currentColor, r, c) != 0)
     {
         noPlace = 0;
-        userColorLocal = BLACK + WHITE - userColorLocal;
+        currentColor = BLACK + WHITE - currentColor;
     }
     else
     {
-        if (algo->refreshCan(userColorLocal) != 0)
-            qDebug("still you");
-        else
+        if (algo->refreshCan(currentColor) == 0)
             gameEnd(algo->checkWin());
     }
+    paintCurrentColor();
     paintPieces();
     paintScore();
 }
@@ -259,6 +323,6 @@ QPoint Board::getMouseCell(QPoint pos)
 void Board::gameEnd(int msg)
 {
     qDebug("game end %d", msg);
-
+    startButton->setEnabled(true);
     //emit gameEnded(msg);
 }

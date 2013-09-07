@@ -36,13 +36,14 @@ class Board : public QWidget
     friend class CellLabel;
 
 public:
-    explicit Board(int userC, QWidget *parent = 0);
+    explicit Board(int server, QWidget *parent = 0);
     ~Board();
 
 signals:
     void decide(int r, int c);
 
 public slots:
+    void playerReady();
 
 protected:
     void paintEvent(QPaintEvent *);
@@ -51,12 +52,14 @@ protected:
     void mouseReleaseEvent(QMouseEvent *);
 
 private:
+    int isServer;
+    int meReady, heReady;
     int needHint, needPlay;
     int mouseEnable;
     int noPlace;
     int currentPaintLevel;
     int userColor;
-    int userColorLocal;
+    int currentColor;
     int TOTALSIZE, BARGIN, PIECEBARGIN;
     int CELLSIZE, GAPSIZE, PIECEOFFSET, x0, y0;
     CellState bdState[64];
@@ -70,7 +73,10 @@ private:
     QPushButton *startButton;
     int scoreAX0, scoreAY0, scoreBX0, scoreBY0, scoreW, scoreH;
     QLabel *scoreLabelA, *scoreLabelB;
+    int infoAX0, infoAY0, infoBX0, infoBY0;
+    QLabel *pieceInfoA, *pieceInfoB;
 
+    void paintCurrentColor();
     void paintPieces(int hint, int play);
     void paintScore();
 
@@ -79,6 +85,8 @@ private:
     void trySetPiece(int r, int c);
     void hintPieces();
 
+    void gamePrepare();
+    void gameStart();
     void gameEnd(int msg);
 
     QPoint mousePressPos;

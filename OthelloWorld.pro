@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     ipclient.cpp \
     ipserver.cpp \
     board.cpp \
-    oalgo.cpp
+    oalgo.cpp \
+    choosecolor.cpp
 
 HEADERS  += mainwindow.h \
     modedialog.h \
@@ -27,7 +28,8 @@ HEADERS  += mainwindow.h \
     ipclient.h \
     ipserver.h \
     board.h \
-    oalgo.h
+    oalgo.h \
+    choosecolor.h
 
 FORMS    += mainwindow.ui \
     modedialog.ui \

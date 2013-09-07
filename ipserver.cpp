@@ -6,6 +6,11 @@ IpServer::IpServer(QWidget *parent) :
     ui(new Ui::IpServer)
 {
     ui->setupUi(this);
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+    setWindowFlags(windowFlags() &~ (
+                   Qt::WindowCloseButtonHint |
+                   Qt::WindowMaximizeButtonHint |
+                   Qt::WindowMinimizeButtonHint));
 
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(confirmed()));
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(cancel()));

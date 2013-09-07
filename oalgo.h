@@ -8,8 +8,10 @@ class Board;
 class OAlgo
 {
 public:
-    OAlgo(int userC, Board *bd);
+    OAlgo(Board *bd);
 
+    void reStart();
+    void setUserC(int clr);
     int setPiece(int clr, int r, int c);
     int refreshCan(int clr);
     void clearCan();

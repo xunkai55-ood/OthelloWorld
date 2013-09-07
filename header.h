@@ -1,12 +1,12 @@
 #ifndef HEADER_H
 #define HEADER_H
 
-#define MODE_NONE 0
-#define MODE_CLIENT 1
-#define MODE_SERVER 2
+#define MODE_NONE (0)
+#define MODE_CLIENT (1)
+#define MODE_SERVER (2)
 
-#define BLACK 1
-#define WHITE 2
+#define BLACK (1)
+#define WHITE (2)
 
 #define CELL(r, c) (((r) * (8)) + (c))
 
