@@ -6,6 +6,7 @@
 #include <QMouseEvent>
 #include <QImage>
 #include <QLabel>
+#include <QPushButton>
 
 #include "header.h"
 #include "OAlgo.h"
@@ -64,8 +65,14 @@ private:
 
     void initResources();
     void initLabels();
+    void initInfo();
+
+    QPushButton *startButton;
+    int scoreAX0, scoreAY0, scoreBX0, scoreBY0, scoreW, scoreH;
+    QLabel *scoreLabelA, *scoreLabelB;
 
     void paintPieces(int hint, int play);
+    void paintScore();
 
     QColor penColor, bkgColor, cellColorA, cellColorB, pieceColorW, pieceColorB;
 

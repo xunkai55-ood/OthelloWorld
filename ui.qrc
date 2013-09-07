@@ -3,5 +3,6 @@
         <file>ui/window.jpg</file>
         <file>ui/baiqi.tga</file>
         <file>ui/heiqi.tga</file>
+        <file>ui/start.png</file>
     </qresource>
 </RCC>

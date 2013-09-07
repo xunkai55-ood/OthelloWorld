@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QImageReader>
 #include <QApplication>
+#include <QPushButton>
 
 CellLabel::CellLabel(Board *bd, QWidget *parent) :
     QLabel(parent)
@@ -38,10 +39,12 @@ Board::Board(int userC, QWidget *parent) :
     penColor(0, 0, 0), bkgColor(220, 220, 220),
     cellColorA(170, 170, 170), cellColorB(85, 85, 85),
     pieceColorB(Qt::black), pieceColorW(Qt::white),
-    mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1)
+    mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1),
+    scoreAX0(103), scoreAY0(482), scoreBX0(753), scoreBY0(482), scoreH(15), scoreW(50)
 {
     initResources();
     initLabels();
+    initInfo();
 
     algo = new OAlgo(userC, this);
 
@@ -58,12 +61,43 @@ Board::Board(int userC, QWidget *parent) :
     algo->setPiece(WHITE, 3, 4);
     algo->setPiece(BLACK, 4, 4);
     algo->setPiece(WHITE, 4, 3);
+
     paintPieces(0, 0);
+    paintScore();
 }
 
 Board::~Board()
 {
     delete algo;
+}
+
+void Board::initInfo()
+{
+    scoreLabelA = new QLabel(this);
+    scoreLabelB = new QLabel(this);
+
+    QPalette pal;
+    pal.setColor(QPalette::Background, QColor(0x00, 0xff, 0x00, 0x00));
+    pal.setColor(QPalette::WindowText, QColor(216, 156, 48));
+
+    QFont font;
+    font.setFamily("arial");
+    font.setBold(true);
+    font.setPointSize(15);
+    scoreLabelA->setGeometry(scoreAX0, scoreAY0, scoreW, scoreH);
+    scoreLabelB->setGeometry(scoreBX0, scoreBY0, scoreW, scoreH);
+    scoreLabelA->setText("");
+    scoreLabelB->setText("");
+    scoreLabelA->setPalette(pal);
+    scoreLabelB->setPalette(pal);
+    scoreLabelA->setFont(font);
+    scoreLabelB->setFont(font);
+
+    QIcon ico("://ui/start.png");
+    startButton = new QPushButton(ico, "", this);
+    //button.setIcon(ico);
+    startButton->move(356, 660);
+
 }
 
 void Board::initResources()
@@ -91,6 +125,21 @@ void Board::initLabels()
             cellArray[CELL(i, j)]->setAlignment(Qt::AlignCenter);
             cellArray[CELL(i, j)]->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         }
+}
+
+void Board::paintScore()
+{
+    int countA = 0, countB = 0; // B for user
+    for (int k = 0; k < 64; k++)
+        if (othello::sameClr(bdState[k], userColor))
+            countB++;
+        else if (othello::antiClr(bdState[k], userColor))
+            countA++;
+    char tmp[10];
+    sprintf(tmp, "%d", countA);
+    scoreLabelA->setText(tmp);
+    sprintf(tmp, "%d", countB);
+    scoreLabelB->setText(tmp);
 }
 
 void Board::paintPieces(int hint = 0, int play = 0)
@@ -181,6 +230,7 @@ void Board::trySetPiece(int r, int c)
             gameEnd(algo->checkWin());
     }
     paintPieces();
+    paintScore();
 }
 
 QPoint Board::getMouseCell(QPoint pos)
