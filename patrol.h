@@ -14,6 +14,7 @@ class PatrolThread : public QThread
 {
     Q_OBJECT
 public:
+    explicit PatrolThread(QObject *parent);
     void run();
 
 signals:
@@ -25,11 +26,13 @@ class ServerThread : public QThread
 {
     Q_OBJECT
 public:
+    explicit ServerThread(QObject *parent);
     void run();
 
 signals:
     void enemyReady();
     void fatalError();
+    void patrolConnected();
 };
 
 class Patrol : public QObject
@@ -38,10 +41,13 @@ class Patrol : public QObject
 public:
     explicit Patrol(int server, QString serverIp, QObject *parent = 0);
     ~Patrol();
+    int initClient();
+    int initServer();
 
 signals:
     void fatalError();
     void recvOthello(int, int);
+    void patrolConnected();
 
 public slots:
     void sendOthello(int, int);
@@ -56,8 +62,6 @@ private:
     const char *getIp();
     int isServer;
 
-    int initClient();
-    int initServer();
     void haltServer();
     void haltClient();
 };

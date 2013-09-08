@@ -27,6 +27,14 @@ MainWindow::MainWindow(QWidget *parent) :
         bd = new Board(1, this);
     }
 
+    connect(patrol, SIGNAL(patrolConnected()), bd, SLOT(gamePrepare()));
+
+
+    if (mode == MODE_CLIENT)
+        patrol->initClient();
+    else
+        patrol->initServer();
+
     setCentralWidget(bd);
 }
 
@@ -44,7 +52,6 @@ void MainWindow::initMode()
         else
         {
             serverIp = dlg.getIp();
-            qDebug() << serverIp;
         }
     }
     else if (mode == MODE_SERVER)
@@ -57,14 +64,14 @@ void MainWindow::initMode()
         else
         {
             serverIp = dlg.getIp();
-            qDebug() << serverIp;
         }
     }
-    qDebug("%d", mode);
 }
 
 MainWindow::~MainWindow()
 {
+    delete patrol;
+    delete bd;
     delete ui;
 }
 

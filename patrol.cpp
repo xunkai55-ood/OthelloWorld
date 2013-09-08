@@ -10,9 +10,21 @@ SOCKET ServerSocket, ClientSocket;
 struct sockaddr_in LocalAddr, ClientAddr, ServerAddr;
 int Ret = 0;
 int AddrLen = 0;
+int xxxx = 0;
 char sendBuffer[MAX_PATH];
 
 using namespace std;
+
+PatrolThread::PatrolThread(QObject *parent) :
+    QThread(parent)
+{
+}
+
+ServerThread::ServerThread(QObject *parent) :
+    QThread(parent)
+{
+}
+
 
 /* defination of Patrol */
 
@@ -25,30 +37,21 @@ Patrol::Patrol(int server, QString ip, QObject *parent) :
     QObject(parent),
     isServer(server)
 {
-    serverThread = new ServerThread();
-    patrolThread = new PatrolThread();
+    serverThread = new ServerThread(this);
+    patrolThread = new PatrolThread(this);
+
+    QObject::connect(serverThread, SIGNAL(enemyReady()), this, SLOT(startPatrol()));
+    QObject::connect(serverThread, SIGNAL(fatalError()), this, SIGNAL(fatalError()));
+    QObject::connect(patrolThread, SIGNAL(recvOthello(int, int)),
+            this, SIGNAL(recvOthello(int, int)));
+    QObject::connect(patrolThread, SIGNAL(patrolDead()), this, SIGNAL(fatalError()));
 
     serverIp = ip;
-    int flag;
-    if (isServer)
-        flag = initServer();
-    else
-        flag = initClient();
-    if (flag != 0)
-    {
-        emit fatalError();
-        return;
-    }
-
-    connect(serverThread, SIGNAL(enemyReady()), this, SLOT(startPatrol()));
-    connect(serverThread, SIGNAL(fatalError()), this, SIGNAL(fatalError()));
-    connect(patrolThread, SIGNAL(recvOthello(int, int)),
-            this, SIGNAL(recvOthello(int, int)));
-    connect(patrolThread, SIGNAL(patrolDead()), this, SIGNAL(fatalError()));
 }
 
 Patrol::~Patrol()
 {
+    qDebug("cu da si le");
     if (isServer)
         haltServer();
     else
@@ -73,7 +76,7 @@ int Patrol::initClient()
     ClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (ClientSocket == INVALID_SOCKET)
     {
-        cout<<"Create Socket Failed::"<<GetLastError()<<endl;
+        cout << "Create Socket Failed::" << GetLastError() << endl;
         emit fatalError();
         return -1;
     }
@@ -82,9 +85,6 @@ int Patrol::initClient()
     ServerAddr.sin_addr.s_addr = inet_addr(getIp());
     ServerAddr.sin_port = htons(PORT);
     memset(ServerAddr.sin_zero, 0x00, 8);
-    qDebug("ip : %s", getIp());
-    qDebug() << ServerAddr.sin_addr.s_addr;
-    qDebug() << htons(PORT);
 
     Ret = ::connect(ClientSocket,(struct sockaddr*)&ServerAddr, sizeof(ServerAddr));
     if (Ret == SOCKET_ERROR)
@@ -95,7 +95,7 @@ int Patrol::initClient()
     }
     else
     {
-        qDebug() << "连接成功!" << endl;
+        qDebug() << "连接成功!";
     }
 
     startPatrol();
@@ -124,8 +124,6 @@ int Patrol::initServer()
     LocalAddr.sin_addr.s_addr = inet_addr(getIp());
     LocalAddr.sin_port = htons(PORT);
     memset(LocalAddr.sin_zero, 0x00, 8);
-    qDebug() << LocalAddr.sin_addr.s_addr;
-    qDebug() << LocalAddr.sin_port;
 
     // Bind Socket
     Ret = bind(ServerSocket, (struct sockaddr*)&LocalAddr, sizeof(LocalAddr));
@@ -144,16 +142,15 @@ int Patrol::initServer()
         return -1;
     }
 
-    qDebug() << "server start!";
-
     serverThread->start();
 }
 
 void ServerThread::run()
 {
-    sleep(200);
+    qDebug() << "here";
     AddrLen = sizeof(ClientAddr);
     ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddr, &AddrLen);
+    qDebug() << "accepted";
     if (ClientSocket == INVALID_SOCKET)
     {
         cout << "Accept Failed::" << GetLastError() << endl;
@@ -162,13 +159,17 @@ void ServerThread::run()
     }
 
     qDebug() << "connection::" << inet_ntoa(ClientAddr.sin_addr) << ":"
-             << ClientAddr.sin_port << endl;
+             << ClientAddr.sin_port;
 
     emit enemyReady();
+    qDebug() << "send signal";
 }
 
 void Patrol::startPatrol()
 {
+    xxxx += 1;
+    qDebug("hello! %d", xxxx);
+    emit patrolConnected();
     patrolThread->start();
 }
 

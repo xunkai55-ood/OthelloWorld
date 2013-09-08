@@ -44,6 +44,7 @@ signals:
 
 public slots:
     void playerReady();
+    void gamePrepare();
 
 protected:
     void paintEvent(QPaintEvent *);
@@ -75,6 +76,7 @@ private:
     QLabel *scoreLabelA, *scoreLabelB;
     int infoAX0, infoAY0, infoBX0, infoBY0;
     QLabel *pieceInfoA, *pieceInfoB;
+    QLabel *roleA, *roleB;
 
     void paintCurrentColor();
     void paintPieces(int hint, int play);
@@ -85,7 +87,6 @@ private:
     void trySetPiece(int r, int c);
     void hintPieces();
 
-    void gamePrepare();
     void gameStart();
     void gameEnd(int msg);
 

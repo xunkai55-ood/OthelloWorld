@@ -4,5 +4,6 @@
         <file>ui/baiqi.tga</file>
         <file>ui/heiqi.tga</file>
         <file>ui/start.png</file>
+        <file>ui/role.jpg</file>
     </qresource>
 </RCC>

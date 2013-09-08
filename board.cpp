@@ -64,6 +64,7 @@ Board::Board(int server, QWidget *parent) :
 
 void Board::gamePrepare()
 {
+    qDebug("we'are preparing");
     if (isServer)
     {
         ChooseColor dlg(this);
@@ -71,6 +72,7 @@ void Board::gamePrepare()
         qDebug("%d", userColor);
         gameStart();
     }
+    roleA->setPixmap(QPixmap("://ui/role.jpg"));
 }
 
 void Board::gameStart()
@@ -151,6 +153,12 @@ void Board::initInfo()
     pieceInfoB = new QLabel(this);
     pieceInfoA->setGeometry(infoAX0, infoAY0, 46, 46);
     pieceInfoB->setGeometry(infoBX0, infoBY0, 46, 46);
+
+    roleA = new QLabel(this);
+    roleB = new QLabel(this);
+    roleA->setGeometry(24, 194, 116, 161);
+    roleB->setGeometry(672, 194, 116, 161);
+    roleB->setPixmap(QPixmap("://ui/role.jpg"));
 }
 
 void Board::initResources()
