@@ -14,20 +14,23 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    setWindowTitle("黑白棋 - Othello World");
     initMode();
     if (mode == MODE_CLIENT)
     {
         patrol = new Patrol(0, serverIp, this);
         bd = new Board(0, this);
+        setWindowTitle("黑白棋 - Othello World (Client)");
     }
     else
     {
         patrol = new Patrol(1, serverIp, this);
         bd = new Board(1, this);
+        setWindowTitle("黑白棋 - Othello World (Server)");
     }
 
-    connect(patrol, SIGNAL(patrolConnected()), bd, SLOT(gamePrepare()));
+    connect(patrol, SIGNAL(patrolConnected()), bd, SLOT(gameEstab()));
+    connect(patrol, SIGNAL(recvOthello(int, int)), bd, SLOT(react(int,int)));
+    connect(bd, SIGNAL(decide(int, int)), patrol, SLOT(sendOthello(int, int)));
 
 
     if (mode == MODE_CLIENT)

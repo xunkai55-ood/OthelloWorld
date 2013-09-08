@@ -50,6 +50,7 @@ signals:
     void patrolConnected();
 
 public slots:
+    void sendFatalError();
     void sendOthello(int, int);
     void startPatrol();
 

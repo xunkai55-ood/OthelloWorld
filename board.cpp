@@ -33,7 +33,8 @@ void CellLabel::mouseReleaseEvent(QMouseEvent *event)
 Board::Board(int server, QWidget *parent) :
     QWidget(parent),
     CELLSIZE(55), GAPSIZE(1), x0(183), y0(144), PIECEOFFSET(4), TOTALSIZE(8 * 55 + 9 * 1),
-    isServer(server), userColor(-1), currentColor(BLACK),
+    isServer(server), onConnection(0),
+    userColor(-1), currentColor(BLACK),
     needHint(0), needPlay(0),
     penColor(0, 0, 0), bkgColor(220, 220, 220),
     cellColorA(170, 170, 170), cellColorB(85, 85, 85),
@@ -54,12 +55,19 @@ Board::Board(int server, QWidget *parent) :
     setMouseTracking(true);
 
     connect(startButton, SIGNAL(clicked()), this, SLOT(playerReady()));
+    qDebug("ready connected");
 
     memset(bdState, 0, sizeof(CellState) * 64);
 
     paintPieces(0, 0);
     paintScore();
     update();
+}
+
+void Board::gameEstab()
+{
+    onConnection = 1;
+    roleA->setPixmap(QPixmap("://ui/role.jpg"));
 }
 
 void Board::gamePrepare()
@@ -70,9 +78,12 @@ void Board::gamePrepare()
         ChooseColor dlg(this);
         userColor = dlg.exec();
         qDebug("%d", userColor);
+        if (userColor == BLACK)
+            emit decide(GAME_INFO, WHITE);
+        else
+            emit decide(GAME_INFO, BLACK);
         gameStart();
     }
-    roleA->setPixmap(QPixmap("://ui/role.jpg"));
 }
 
 void Board::gameStart()
@@ -108,7 +119,8 @@ void Board::gameEnd(int msg)
 void Board::playerReady()
 {
     meReady = 1;
-    heReady = 1;
+    emit decide(GAME_INFO, GAME_READY);
+    qDebug("send ready");
     if (heReady)
         gamePrepare();
     startButton->setEnabled(false);
@@ -333,4 +345,39 @@ QPoint Board::getMouseCell(QPoint pos)
     y = y / (GAPSIZE + CELLSIZE);
     //qDebug("cell : %d %d", x, y);
     return QPoint(x, y);
+}
+
+void Board::react(int r, int c)
+{
+    qDebug("%d %d", r, c);
+    if (r == GAME_INFO)
+    {
+        switch (c)
+        {
+        case GAME_READY:
+        {
+            heReady = 1;
+            if (meReady)
+                gamePrepare();
+            break;
+        }
+        case BLACK:
+        {
+            userColor = BLACK;
+            gameStart();
+            break;
+        }
+        case WHITE:
+        {
+            userColor = WHITE;
+            gameStart();
+            break;
+        }
+        default:
+        {
+            return;
+        }
+
+        }
+    }
 }

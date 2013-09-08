@@ -45,6 +45,8 @@ signals:
 public slots:
     void playerReady();
     void gamePrepare();
+    void gameEstab();
+    void react(int r, int c);
 
 protected:
     void paintEvent(QPaintEvent *);
@@ -53,7 +55,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *);
 
 private:
-    int isServer;
+    int isServer, onConnection;
     int meReady, heReady;
     int needHint, needPlay;
     int mouseEnable;

@@ -36,11 +36,13 @@ CellState toState(int clr);
 
 }
 
-#define GAME_WIN (3)
-#define GAME_LOSE (1)
-#define GAME_TIE (2)
+#define GAME_WIN (13)
+#define GAME_LOSE (11)
+#define GAME_TIE (12)
 
 #define GAME_INFO (-5)
 #define GAME_RUNAWAY (-10)
+#define GAME_READY (-1)
+#define GAME_FATALERROR (-9)
 
 #endif // HEADER_H
