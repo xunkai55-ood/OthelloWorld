@@ -54,6 +54,7 @@ Board::Board(int server, QWidget *parent) :
     setMaximumSize(uiWindow.size());
     setMouseTracking(true);
 
+    startButton->setEnabled(false);
     connect(startButton, SIGNAL(clicked()), this, SLOT(playerReady()));
     qDebug("ready connected");
 
@@ -68,6 +69,7 @@ void Board::gameEstab()
 {
     onConnection = 1;
     roleA->setPixmap(QPixmap("://ui/role.jpg"));
+    startButton->setEnabled(true);
 }
 
 void Board::gamePrepare()
@@ -104,6 +106,7 @@ void Board::gameStart()
     algo->setPiece(WHITE, 4, 3);
 
     qDebug() << "set...";
+    paintCurrentColor();
     paintPieces(0, 0);
     paintScore();
     update();
@@ -161,16 +164,17 @@ void Board::initInfo()
     startButton->setIcon(ico);
     startButton->setIconSize(icoPm.size());
 
-    pieceInfoA = new QLabel(this);
-    pieceInfoB = new QLabel(this);
-    pieceInfoA->setGeometry(infoAX0, infoAY0, 46, 46);
-    pieceInfoB->setGeometry(infoBX0, infoBY0, 46, 46);
-
     roleA = new QLabel(this);
     roleB = new QLabel(this);
     roleA->setGeometry(24, 194, 116, 161);
     roleB->setGeometry(672, 194, 116, 161);
     roleB->setPixmap(QPixmap("://ui/role.jpg"));
+
+    pieceInfoA = new QLabel(this);
+    pieceInfoB = new QLabel(this);
+    pieceInfoA->setGeometry(infoAX0, infoAY0, 46, 46);
+    pieceInfoB->setGeometry(infoBX0, infoBY0, 46, 46);
+
 }
 
 void Board::initResources()
@@ -229,6 +233,7 @@ void Board::paintPieces(int hint = 0, int play = 0)
 
 void Board::paintCurrentColor()
 {
+    qDebug("try paint demo %d %d", userColor, currentColor);
     if (userColor == currentColor)
     {
         if (userColor == BLACK)
@@ -255,6 +260,7 @@ void Board::paintEvent(QPaintEvent *)
 
     p.drawImage(0, 0, uiWindow);
 
+
     int xx = x0 + GAPSIZE, yy = y0 + GAPSIZE;
     int i = mouseCell.x(), j = mouseCell.y();
     if (i >= 0 && j >= 0)
@@ -264,6 +270,8 @@ void Board::paintEvent(QPaintEvent *)
         if ((bdState[CELL(i, j)] & IS_PIECE) == 0 &&
                 othello::canPut(bdState[CELL(i, j)], currentColor))
             penC.setColor(Qt::green);
+        if (userColor != currentColor)
+            penC.setColor(Qt::black);
         penC.setWidth(3);
         p.setPen(penC);
         p.drawRect(i * (GAPSIZE + CELLSIZE) + xx,
@@ -286,7 +294,7 @@ void Board::mouseMoveEvent(QMouseEvent *event)
 
 void Board::mousePressEvent(QMouseEvent *event)
 {
-    //if (userColor != currentColor) return;
+    if (userColor != currentColor) return;
     QPoint pos = mapFromGlobal(event->globalPos());
     mousePressPos = pos;
     mousePrevCell = mouseCell;
@@ -295,7 +303,7 @@ void Board::mousePressEvent(QMouseEvent *event)
 
 void Board::mouseReleaseEvent(QMouseEvent *event)
 {
-    //if (userColor != currentColor) return;
+    if (userColor != currentColor) return;
     QPoint pos = mapFromGlobal(event->globalPos());
     if (pos != mousePressPos)
         return;
@@ -311,6 +319,9 @@ void Board::trySetPiece(int r, int c)
         //hintPiece();
         return;
     }
+
+    if (userColor == currentColor)
+        emit decide(r, c);
 
     if (algo->setPiece(currentColor, r, c) != 0)
     {
@@ -373,11 +384,18 @@ void Board::react(int r, int c)
             gameStart();
             break;
         }
+        case GAME_FATALERROR:
+        {
+            qDebug() << "cu da shi le";
+            return;
+        }
         default:
         {
             return;
         }
-
         }
     }
+    else
+        if (userColor != currentColor)
+            trySetPiece(r, c);
 }

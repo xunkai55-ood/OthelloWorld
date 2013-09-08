@@ -10,7 +10,6 @@ SOCKET ServerSocket, ClientSocket;
 struct sockaddr_in LocalAddr, ClientAddr, ServerAddr;
 int Ret = 0;
 int AddrLen = 0;
-int xxxx = 0;
 char sendBuffer[MAX_PATH];
 
 using namespace std;
@@ -41,7 +40,7 @@ Patrol::Patrol(int server, QString ip, QObject *parent) :
     patrolThread = new PatrolThread(this);
 
     connect(serverThread, SIGNAL(enemyReady()), this, SLOT(startPatrol()));
-    connect(serverThread, SIGNAL(fatalError()), this, SLOT(fatalError()));
+    connect(serverThread, SIGNAL(fatalError()), this, SIGNAL(fatalError()));
     connect(patrolThread, SIGNAL(recvOthello(int, int)),
             this, SIGNAL(recvOthello(int, int)));
     connect(patrolThread, SIGNAL(patrolDead()), this, SIGNAL(fatalError()));
@@ -52,15 +51,12 @@ Patrol::Patrol(int server, QString ip, QObject *parent) :
 
 Patrol::~Patrol()
 {
-    qDebug("cu da si le");
     if (isServer)
         haltServer();
     else
         haltClient();
     patrolThread->quit();
     serverThread->quit();
-    delete patrolThread;
-    delete serverThread;
 }
 
 int Patrol::initClient()
@@ -96,7 +92,7 @@ int Patrol::initClient()
     }
     else
     {
-        qDebug() << "连接成功!";
+        qDebug() << "Connect successfully!";
     }
 
     startPatrol();
@@ -148,10 +144,8 @@ int Patrol::initServer()
 
 void ServerThread::run()
 {
-    qDebug() << "here";
     AddrLen = sizeof(ClientAddr);
     ClientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddr, &AddrLen);
-    qDebug() << "accepted";
     if (ClientSocket == INVALID_SOCKET)
     {
         cout << "Accept Failed::" << GetLastError() << endl;
@@ -163,13 +157,10 @@ void ServerThread::run()
              << ClientAddr.sin_port;
 
     emit enemyReady();
-    qDebug() << "send signal";
 }
 
 void Patrol::startPatrol()
 {
-    xxxx += 1;
-    qDebug("hello! %d", xxxx);
     emit patrolConnected();
     patrolThread->start();
 }
@@ -179,14 +170,15 @@ void PatrolThread::run()
     int Ret = 0, x, y;
     char recvBuffer[MAX_PATH];
 
-    qDebug("running");
     while (true)
     {
         memset(recvBuffer, 0x00, sizeof(recvBuffer));
         Ret = recv(ClientSocket, recvBuffer, MAX_PATH, 0);
-        qDebug("receive something %s", recvBuffer);
+        qDebug("receive something %d", Ret);
+        qDebug() << recvBuffer;
         if (Ret == SOCKET_ERROR)
         {
+            qDebug("wrong!");
             emit patrolDead();
             break;
         }
