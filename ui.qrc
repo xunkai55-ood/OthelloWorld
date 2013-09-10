@@ -6,5 +6,7 @@
         <file>ui/start.png</file>
         <file>ui/role.jpg</file>
         <file>main.qss</file>
+        <file>ui/hint.jpg</file>
+        <file>ui/surrender.jpg</file>
     </qresource>
 </RCC>

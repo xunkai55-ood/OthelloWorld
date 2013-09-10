@@ -6,6 +6,7 @@
 #include <QMouseEvent>
 #include <QImage>
 #include <QLabel>
+#include <QTimer>
 #include <QPushButton>
 
 #include "header.h"
@@ -49,7 +50,12 @@ public slots:
     void gameEstab();
     void react(int r, int c);
 
+    void hintPieces();
+    void surrender();
     void userTimeOut();
+
+    void hintStop();
+    void movieStop();
 
 protected:
     void paintEvent(QPaintEvent *);
@@ -58,7 +64,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *);
 
 private:
-    int isServer, onConnection;
+    int isServer, onConnection, inGame;
     int meReady, heReady;
     int needHint, needPlay;
     int mouseEnable;
@@ -76,7 +82,7 @@ private:
     void initLabels();
     void initInfo();
 
-    QPushButton *startButton;
+    QPushButton *startButton, *surrenderButton, *hintButton;
     int scoreAX0, scoreAY0, scoreBX0, scoreBY0, scoreW, scoreH;
     QLabel *scoreLabelA, *scoreLabelB;
     int infoAX0, infoAY0, infoBX0, infoBY0;
@@ -90,7 +96,6 @@ private:
     QColor penColor, bkgColor, cellColorA, cellColorB, pieceColorW, pieceColorB;
 
     void trySetPiece(int r, int c);
-    void hintPieces();
 
     void gameStart();
     void gameEnd(int msg);
@@ -106,6 +111,14 @@ private:
 
     ExTimer *restA, *restB, *totalA, *totalB;
     QLabel *rTA, *rTB, *tTA, *tTB;
+
+    QTimer *hintTimer, *movieTimer;
+
+    void moviePlay();
+
+    std::vector<int> hintV;
+    std::vector<int> movieV;
+    int inHint, inMovie;
 };
 
 #endif // BOARD_H

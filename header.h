@@ -44,5 +44,6 @@ CellState toState(int clr);
 #define GAME_RUNAWAY (-10)
 #define GAME_READY (-1)
 #define GAME_FATALERROR (-9)
+#define GAME_SURRENDER (-8)
 
 #endif // HEADER_H

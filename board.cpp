@@ -43,7 +43,7 @@ Board::Board(int server, QWidget *parent) :
     mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1),
     scoreAX0(103), scoreAY0(482), scoreBX0(753), scoreBY0(482), scoreH(15), scoreW(50),
     infoAX0(92), infoAY0(305), infoBX0(739), infoBY0(305),
-    meReady(0), heReady(0), inGame(0)
+    meReady(0), heReady(0), inGame(0), inHint(0), inMovie(0)
 {
     initResources();
     initLabels();
@@ -55,8 +55,20 @@ Board::Board(int server, QWidget *parent) :
     setMaximumSize(uiWindow.size());
     setMouseTracking(true);
 
-    startButton->setEnabled(false);
+    startButton->setVisible(false);
+    surrenderButton->setVisible(false);
+    hintButton->setVisible(false);
+
     connect(startButton, SIGNAL(clicked()), this, SLOT(playerReady()));
+    connect(surrenderButton, SIGNAL(clicked()), this, SLOT(surrender()));
+    connect(hintButton, SIGNAL(clicked()), this, SLOT(hintPieces()));
+
+    hintTimer = new QTimer(this);
+    movieTimer = new QTimer(this);
+
+    connect(hintTimer, SIGNAL(timeout()), this, SLOT(hintStop()));
+    connect(movieTimer, SIGNAL(timeout()), this, SLOT(movieStop()));
+
     qDebug("ready connected");
 
     memset(bdState, 0, sizeof(CellState) * 64);
@@ -70,12 +82,14 @@ void Board::gameEstab()
 {
     onConnection = 1;
     roleA->setPixmap(QPixmap("://ui/role.jpg"));
-    startButton->setEnabled(true);
+    startButton->setVisible(true);
 }
 
 void Board::gamePrepare()
 {
     qDebug("we'are preparing");
+    heReady = 0;
+    meReady = 0;
     if (isServer)
     {
         ChooseColor dlg(this);
@@ -117,11 +131,19 @@ void Board::gameStart()
     algo->setPiece(BLACK, 4, 4);
     algo->setPiece(WHITE, 4, 3);
 
+    surrenderButton->setVisible(true);
+    hintButton->setVisible(true);
     qDebug() << "set...";
     paintCurrentColor();
     paintPieces(0, 0);
     paintScore();
     update();
+}
+
+void Board::surrender()
+{
+    gameEnd(GAME_SURRENDER);
+    emit decide(GAME_INFO, GAME_SURRENDER);
 }
 
 void Board::gameEnd(int msg)
@@ -143,11 +165,18 @@ void Board::gameEnd(int msg)
         gameMsg("棋逢对手，将遇良才，平局");
         break;
     }
+    case GAME_SURRENDER:
+    {
+        gameMsg("您投降了");
+        break;
+    }
     }
 
     currentColor = -1;
     inGame = 0;
-    startButton->setEnabled(true);
+    startButton->setVisible(true);
+    surrenderButton->setVisible(false);
+    hintButton->setVisible(false);
     //emit gameEnded(msg);
 }
 
@@ -158,7 +187,7 @@ void Board::playerReady()
     qDebug("send ready");
     if (heReady)
         gamePrepare();
-    startButton->setEnabled(false);
+    startButton->setVisible(false);
 }
 
 Board::~Board()
@@ -195,6 +224,22 @@ void Board::initInfo()
     startButton->setGeometry(356, 660, 94, 36);
     startButton->setIcon(ico);
     startButton->setIconSize(icoPm.size());
+
+    QPixmap icoP1("://ui/surrender.jpg");
+    QIcon ico1(icoP1);
+    surrenderButton = new QPushButton(ico1, "", this);
+    surrenderButton->setFlat(true);
+    surrenderButton->setGeometry(283, 660, 93, 36);
+    surrenderButton->setIcon(ico1);
+    surrenderButton->setIconSize(icoP1.size());
+
+    QPixmap icoP2("://ui/hint.jpg");
+    QIcon ico2(icoP2);
+    hintButton = new QPushButton(ico2, "", this);
+    hintButton->setFlat(true);
+    hintButton->setGeometry(429, 660, 93, 36);
+    hintButton->setIcon(ico2);
+    hintButton->setIconSize(icoP2.size());
 
     roleA = new QLabel(this);
     roleB = new QLabel(this);
@@ -299,6 +344,48 @@ void Board::paintCurrentColor()
     }
 }
 
+void Board::hintPieces()
+{
+    if (currentColor != userColor) return;
+    hintTimer->start(1500);
+    hintV.clear();
+    for (int i = 0; i < 64; i++)
+        if (othello::canPut(bdState[i], userColor))
+        {
+            //QPixmap pm = QPixmap::fromImage(userColor == BLACK ? uiPieceB : uiPieceW);
+            QImage img(userColor == BLACK ? uiPieceB : uiPieceW);
+            QImage alphaPic(img.size(), QImage::Format_ARGB32);
+            alphaPic.fill(QColor(100, 100, 100, 40));
+            img.setAlphaChannel(alphaPic);
+            cellArray[i]->setPixmap(QPixmap::fromImage(img));
+            hintV.push_back(i);
+        }
+    inHint = 1;
+}
+
+void Board::hintStop()
+{
+    if (!inHint) return;
+    inHint = 0;
+    for (int i = 0; i < hintV.size(); i++)
+    {
+        cellArray[hintV[i]]->clear();
+    }
+}
+
+void Board::moviePlay()
+{
+
+    inMovie = 1;
+}
+
+void Board::movieStop()
+{
+    if (!inMovie) return;
+    inMovie = 0;
+
+}
+
 void Board::paintEvent(QPaintEvent *)
 {
     //qDebug() << "hi";
@@ -364,7 +451,7 @@ void Board::trySetPiece(int r, int c)
     if ((bdState[x] & IS_PIECE) != 0) return;
     if (!othello::canPut(bdState[x], currentColor))
     {
-        //hintPiece();
+        //hintPieces();
         return;
     }
 
@@ -374,6 +461,8 @@ void Board::trySetPiece(int r, int c)
     if (algo->setPiece(currentColor, r, c) != 0)
     {
         noPlace = 0;
+        hintStop();
+        movieStop();
         currentColor = BLACK + WHITE - currentColor;
     }
     else
@@ -389,14 +478,14 @@ void Board::trySetPiece(int r, int c)
 
     if (userColor == currentColor)
     {
-        restB->restart(1);
+        restB->restart(30);
         totalB->resume();
         totalA->pause();
         restA->restart(0);
     }
     else
     {
-        restA->restart(1);
+        restA->restart(30);
         totalA->resume();
         totalB->pause();
         restB->restart(0);
@@ -474,6 +563,12 @@ void Board::react(int r, int c)
         {
             if (currentColor != userColor)
                 gameMsg("对方逃跑了！");
+            return;
+        }
+        case GAME_SURRENDER:
+        {
+            gameMsg("对方投降了！");
+            gameEnd(GAME_INFO);
             return;
         }
         default:
