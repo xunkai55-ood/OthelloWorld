@@ -7,6 +7,7 @@
 #include <QImageReader>
 #include <QApplication>
 #include <QPushButton>
+#include <QMessageBox>
 
 CellLabel::CellLabel(Board *bd, QWidget *parent) :
     QLabel(parent)
@@ -42,7 +43,7 @@ Board::Board(int server, QWidget *parent) :
     mousePrevCell(-1, -1), mouseCell(-1, -1), mouseEnable(1),
     scoreAX0(103), scoreAY0(482), scoreBX0(753), scoreBY0(482), scoreH(15), scoreW(50),
     infoAX0(92), infoAY0(305), infoBX0(739), infoBY0(305),
-    meReady(0), heReady(0)
+    meReady(0), heReady(0), inGame(0)
 {
     initResources();
     initLabels();
@@ -90,10 +91,21 @@ void Board::gamePrepare()
 
 void Board::gameStart()
 {
+    inGame = 1;
     memset(bdState, 0, sizeof(CellState) * 64);
     paintPieces(0, 0);
     paintScore();
     update();
+
+    restA->restart(0);
+    restB->restart(0);
+    totalA->restart(3600);
+    totalB->restart(3600);
+
+    if (userColor == currentColor)
+        totalA->pause();
+    else
+        totalB->pause();
 
     qDebug() << "start...";
     algo->reStart();
@@ -114,7 +126,27 @@ void Board::gameStart()
 
 void Board::gameEnd(int msg)
 {
-    qDebug("game end %d", msg);
+    switch (msg)
+    {
+    case GAME_WIN:
+    {
+        gameMsg("恭喜您获胜了！");
+        break;
+    }
+    case GAME_LOSE:
+    {
+        gameMsg("别灰心，何妨再来一局");
+        break;
+    }
+    case GAME_TIE:
+    {
+        gameMsg("棋逢对手，将遇良才，平局");
+        break;
+    }
+    }
+
+    currentColor = -1;
+    inGame = 0;
     startButton->setEnabled(true);
     //emit gameEnded(msg);
 }
@@ -175,6 +207,21 @@ void Board::initInfo()
     pieceInfoA->setGeometry(infoAX0, infoAY0, 46, 46);
     pieceInfoB->setGeometry(infoBX0, infoBY0, 46, 46);
 
+    rTA = new QLabel(this); rTA->setGeometry(78, 427, 60, 17);
+    rTA->setPalette(pal); rTA->setFont(font);
+    rTB = new QLabel(this); rTB->setGeometry(729, 427, 60, 17);
+    rTB->setPalette(pal); rTB->setFont(font);
+    tTA = new QLabel(this); tTA->setGeometry(78, 455, 60, 17);
+    tTA->setPalette(pal); tTA->setFont(font);
+    tTB = new QLabel(this); tTB->setGeometry(729, 455, 60, 17);
+    tTB->setPalette(pal); tTB->setFont(font);
+
+    restA = new ExTimer(0, rTA, this);
+    restB = new ExTimer(0, rTB, this);
+    totalA = new ExTimer(1, tTA, this);
+    totalB = new ExTimer(1, tTB, this);
+
+    connect(restB, SIGNAL(bomb()), this, SLOT(userTimeOut()));
 }
 
 void Board::initResources()
@@ -312,6 +359,7 @@ void Board::mouseReleaseEvent(QMouseEvent *event)
 
 void Board::trySetPiece(int r, int c)
 {
+    if (!inGame) return;
     int x = CELL(r, c);
     if ((bdState[x] & IS_PIECE) != 0) return;
     if (!othello::canPut(bdState[x], currentColor))
@@ -332,10 +380,43 @@ void Board::trySetPiece(int r, int c)
     {
         if (algo->refreshCan(currentColor) == 0)
             gameEnd(algo->checkWin());
+        else
+            if (userColor == currentColor)
+                gameMsg("对手无子可落，请继续落子");
+            else
+                gameMsg("您无子可落，对方继续落子");
     }
+
+    if (userColor == currentColor)
+    {
+        restB->restart(1);
+        totalB->resume();
+        totalA->pause();
+        restA->restart(0);
+    }
+    else
+    {
+        restA->restart(1);
+        totalA->resume();
+        totalB->pause();
+        restB->restart(0);
+    }
+
     paintCurrentColor();
     paintPieces();
     paintScore();
+}
+
+void Board::userTimeOut()
+{
+    if (currentColor != userColor) return;
+    std::vector<QPoint> v;
+    v.clear();
+    for (int k = 0; k < 64; k++)
+        if (othello::canPut(bdState[k], userColor))
+            v.push_back(QPoint(k / 8, k % 8));
+    int chs = rand() % v.size();
+    trySetPiece(v[chs].x(), v[chs].y());
 }
 
 QPoint Board::getMouseCell(QPoint pos)
@@ -386,7 +467,13 @@ void Board::react(int r, int c)
         }
         case GAME_FATALERROR:
         {
-            qDebug() << "cu da shi le";
+            qDebug() << "意外";
+            return;
+        }
+        case GAME_RUNAWAY:
+        {
+            if (currentColor != userColor)
+                gameMsg("对方逃跑了！");
             return;
         }
         default:
@@ -398,4 +485,31 @@ void Board::react(int r, int c)
     else
         if (userColor != currentColor)
             trySetPiece(r, c);
+}
+
+void Board::gameMsg(const char *s)
+{
+    QMessageBox dlg(this->parentWidget());
+
+    /*QPalette pal;
+
+    pal.setColor(QPalette::Window, QColor(32, 16, 0));
+    pal.setColor(QPalette::WindowText, QColor(216, 156, 48));
+    pal.setColor(QPalette::Button, QColor(32, 16, 0));
+    pal.setColor(QPalette::ButtonText, QColor(216, 156, 48));
+    dlg.setPalette(pal);*/
+
+    QFont font;
+    font.setBold(true);
+    font.setPointSize(15);
+    dlg.setFont(font);
+
+    dlg.setWindowFlags(dlg.windowFlags() | Qt::WindowStaysOnTopHint);
+    dlg.setWindowFlags(dlg.windowFlags() &~ (
+                       Qt::WindowTitleHint |
+                       Qt::WindowCloseButtonHint |
+                       Qt::WindowMaximizeButtonHint |
+                       Qt::WindowMinimizeButtonHint));
+    dlg.setText(s);
+    dlg.exec();
 }

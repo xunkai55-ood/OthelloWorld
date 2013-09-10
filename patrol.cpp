@@ -34,17 +34,21 @@ const char *Patrol::getIp()
 
 Patrol::Patrol(int server, QString ip, QObject *parent) :
     QObject(parent),
-    isServer(server)
+    isServer(server), isFatal(0)
 {
     serverThread = new ServerThread(this);
     patrolThread = new PatrolThread(this);
 
-    connect(serverThread, SIGNAL(enemyReady()), this, SLOT(startPatrol()));
-    connect(serverThread, SIGNAL(fatalError()), this, SIGNAL(fatalError()));
+    connect(serverThread, SIGNAL(enemyReady()), this, SLOT(startPatrol()),
+            Qt::DirectConnection);
+    connect(serverThread, SIGNAL(fatalError()), this, SIGNAL(fatalError()),
+            Qt::DirectConnection);
     connect(patrolThread, SIGNAL(recvOthello(int, int)),
-            this, SIGNAL(recvOthello(int, int)));
-    connect(patrolThread, SIGNAL(patrolDead()), this, SIGNAL(fatalError()));
-    connect(this, SIGNAL(fatalError()), this, SLOT(sendFatalError()));
+            this, SIGNAL(recvOthello(int, int)), Qt::DirectConnection);
+    connect(patrolThread, SIGNAL(patrolDead()), this, SLOT(sendFatalError()),
+            Qt::DirectConnection);
+    connect(this, SIGNAL(fatalError()), this, SLOT(sendFatalError()),
+            Qt::DirectConnection);
 
     serverIp = ip;
 }
@@ -176,13 +180,13 @@ void PatrolThread::run()
         Ret = recv(ClientSocket, recvBuffer, MAX_PATH, 0);
         qDebug("receive something %d", Ret);
         qDebug() << recvBuffer;
-        if (Ret == SOCKET_ERROR)
+        if (Ret == 0)
         {
             qDebug("wrong!");
             emit patrolDead();
             break;
         }
-        if (Ret == 0)
+        if (Ret == SOCKET_ERROR)
         {
             emit recvOthello(GAME_INFO, GAME_RUNAWAY);
             break;
@@ -204,6 +208,9 @@ void Patrol::sendOthello(int x, int y)
 
 void Patrol::sendFatalError()
 {
+    if (isFatal) return;
+    isFatal = 1;
+    qDebug() << "fatal";
     sendOthello(GAME_INFO, GAME_FATALERROR);
 }
 

@@ -63,6 +63,7 @@ private:
     const char *getIp();
     int isServer;
 
+    int isFatal;
     void haltServer();
     void haltClient();
 };

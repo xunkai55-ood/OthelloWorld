@@ -1,0 +1,22 @@
+QDialog {
+	border-color: rgb(32, 16, 0);
+	color: rgb(216, 156, 48); 
+	background-color: rgb(32, 16, 0);
+	font-size: 13;
+	font-family: Arial;
+	font-style: bold;
+}
+QPushButton { 
+	color: rgb(216, 156, 48); 
+	background-color: rgb(82, 56, 50);
+	font-size: 10;
+	font-family: Arial;
+	font-style: bold;
+}
+QLabel {
+	color: rgb(216, 156, 48); 
+	font-size: 13;
+	font-family: Arial;
+	font-style: bold;
+}
+	

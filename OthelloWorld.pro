@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     board.cpp \
     oalgo.cpp \
     choosecolor.cpp \
-    patrol.cpp
+    patrol.cpp \
+    extimer.cpp
 
 HEADERS  += mainwindow.h \
     modedialog.h \
@@ -32,7 +33,8 @@ HEADERS  += mainwindow.h \
     board.h \
     oalgo.h \
     choosecolor.h \
-    patrol.h
+    patrol.h \
+    extimer.h
 
 FORMS    += mainwindow.ui \
     modedialog.ui \

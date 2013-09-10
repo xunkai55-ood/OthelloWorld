@@ -58,7 +58,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *);
 
 private:
-    int isServer, onConnection;
+    int isServer, onConnection, inGame;
     int meReady, heReady;
     int needHint, needPlay;
     int mouseEnable;

@@ -8,6 +8,7 @@ ModeDialog::ModeDialog(QWidget *parent) :
     ui->setupUi(this);
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     setWindowFlags(windowFlags() &~ (
+                   Qt::WindowTitleHint |
                    Qt::WindowCloseButtonHint |
                    Qt::WindowMaximizeButtonHint |
                    Qt::WindowMinimizeButtonHint));
